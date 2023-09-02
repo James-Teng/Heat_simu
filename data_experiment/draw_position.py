@@ -1,7 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 
-data_path = r'E:\Research\Project\Heat_simu\data\data1\no_initial_dam\gap0.5_0.1Kpermin-1.txt'
+data_path = r'E:\Research\Project\Heat_simu\data\data2_even\0.1K_0.1gap.txt'
 
 if __name__ == '__main__':
 
