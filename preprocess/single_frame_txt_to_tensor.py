@@ -7,9 +7,9 @@ import torch
 # to do：解决数据中 nan 的问题，暂时换成 0
 
 data_path = r'E:\Research\Project\Heat_simu\data\data2_even\txt_format\0.1K_0.1gap.txt'
-output_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format'
 
-frame = 190  # index from 0 to max - 1
+
+frame = 0  # index from 0 to max - 1
 max_T = 400  # 摄氏度
 min_T = 0
 
