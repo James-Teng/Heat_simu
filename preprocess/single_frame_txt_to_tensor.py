@@ -71,6 +71,7 @@ if __name__ == '__main__':
                 row += 1
                 r_former = points[0]
         print(f'tensor size: row - {row}, column - {column}')  # 横向(r) 130 纵向(z) 260
+        print(f'resolution: ({points[1][0] - points[0][0]}, {points[column][1] - points[0][1]}) mm')
 
         # 转换一帧
         # frame = np.zeros((row, column))
