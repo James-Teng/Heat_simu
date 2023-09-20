@@ -1,3 +1,9 @@
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2023.9.20 14:27
+# @Author  : James.T
+# @File    : all_txt_to_tensor.py
+
 import os
 import matplotlib.pyplot as plt
 import numpy as np
