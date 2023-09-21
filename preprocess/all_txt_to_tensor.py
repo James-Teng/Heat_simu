@@ -93,7 +93,7 @@ if __name__ == '__main__':
         output_dir = os.path.join(output_path, dir_name)
         os.makedirs(output_dir)
 
-        np.save(os.path.join(output_dir, f'mask_{dir_name}.npy'), mask)
+        np.save(os.path.join(output_dir, f'mask_{dir_name}.npy'), mask)  # 保存list，读取需要手动转换 list()
         plt.imsave(os.path.join(output_dir, f'mask_{dir_name}.png'), mask)
 
         for i in range(all_distrib.shape[0]):
