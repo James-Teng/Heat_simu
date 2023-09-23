@@ -116,7 +116,7 @@ class DatasetFromFolder(Dataset):
 # 是否需要这一层的封装？目前来说需要区分 是否为训练 是否裁切 是否旋转 监督范围
 def SimuHeatDataset(
         root: str,
-        train: bool,  # 暂时没有这个功能
+        train: bool,
         rotate: bool,
         supervised_range: int,
         crop_size: Optional[int] = None,
@@ -138,22 +138,55 @@ if __name__ == '__main__':
 
     # ------ debugging ------ #
 
-    # test for DatasetFromFolder
-    td = DatasetFromFolder(
-        r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
-        supervised_range=0,
-    )
-    print(len(td))
-    dis, mask = td[190]
-    print(len(dis))
-    plt.figure()
-    plt.imshow(dis[0], vmin=0, vmax=400, cmap='jet')  # 建立颜色映射
-    plt.axis('off')
-    plt.figure()
-    plt.imshow(mask, vmin=0, vmax=400, cmap='jet')  # 建立颜色映射
-    plt.axis('off')
-    plt.show()
+    # # test for DatasetFromFolder
+    # td = DatasetFromFolder(
+    #     r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
+    #     supervised_range=1,
+    #     transform_input=utils.compose_input_transforms(),
+    #     transform_mask=utils.compose_mask_transforms(),
+    #     transform_target=utils.compose_target_transforms(),
+    # )
+    # print('dataset length: ', len(td))
+    # dis, mask = td[189]
+    #
+    # dis[1] = dis[1] * mask
+    #
+    # print(dis[1].max(), dis[1].min())
+    # plt.figure()
+    # plt.imshow(dis[1].numpy().transpose(1, 2, 0), vmin=-1, vmax=1, cmap='jet')
+    # plt.axis('off')
+    # plt.show()
 
-    # calculate mean and std
-    print(utils.get_stat(td, 1))
+    # # calculate mean and std
+    # print(utils.get_stat(td, 1))
+
+    # test for collater
+    test_dataset = DatasetFromFolder(
+        r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
+        supervised_range=4,
+        transform_input=utils.compose_input_transforms(),
+        transform_mask=utils.compose_mask_transforms(),
+        transform_target=utils.compose_target_transforms(),
+    )
+    print('dataset length: ', len(test_dataset))
+
+    test_dataloader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=4,
+        shuffle=False,
+    )
+
+    distribs, mask = next(iter(test_dataloader))
+    print(distribs)
+    print(len(distribs))
+    print('\n')
+    print(mask)
+
+
+    # plt.figure()
+    # plt.imshow(dis[1].numpy().transpose(1, 2, 0), vmin=-1, vmax=1, cmap='jet')
+    # plt.axis('off')
+    # plt.show()
+
+
 
