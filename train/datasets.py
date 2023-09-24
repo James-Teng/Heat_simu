@@ -113,7 +113,7 @@ class DatasetFromFolder(Dataset):
         return self.length
 
 
-# 是否需要这一层的封装？目前来说需要区分 是否为训练 是否裁切 是否旋转 监督范围
+# todo 是否需要这一层的封装？目前来说需要区分 是否为训练 是否裁切 是否旋转 监督范围
 def SimuHeatDataset(
         root: str,
         train: bool,
