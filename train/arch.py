@@ -118,195 +118,68 @@ class ResidualBlock(nn.Module):
         return y + x
 
 
-# class SRResNet(nn.Module):
-#     """
-#
-#     """
-#     def __init__(
-#             self,
-#             large_kernel_size: int = 9,
-#             small_kernel_size: int = 3,
-#             n_channels: int = 64,
-#             n_blocks: int = 16,
-#             scaling_factor: int = 4,
-#     ):
-#         super().__init__()
-#         assert scaling_factor in {2, 4, 8}, 'scaling_factor not allowed, should be 2, 4 or 8'
-#
-#         # conv_k9n64s1 PReLU
-#         self.conv_block1 = ConvolutionalBlock(
-#             in_channels=3,
-#             out_channels=n_channels,
-#             kernel_size=large_kernel_size,
-#             is_bn=False,
-#             activation='PReLu',
-#         )
-#
-#         # residual blocks
-#         self.residual_blocks = nn.Sequential(
-#             *[
-#                 ResidualBlock(
-#                     kernel_size=small_kernel_size,
-#                     channels=n_channels,
-#                 )
-#                 for i in range(n_blocks)
-#             ]
-#         )
-#
-#         # conv_k3n64s1  bn  s1
-#         self.conv_block2 = ConvolutionalBlock(
-#             in_channels=n_channels,
-#             out_channels=n_channels,
-#             kernel_size=small_kernel_size,
-#             is_bn=True,
-#             activation=None,
-#         )
-#
-#         # sub pixel shuffle blocks
-#         n_sub_blocks = int(math.log2(scaling_factor))
-#         self.sub_pixel_shuffle_blocks = nn.Sequential(
-#             *[
-#                 SubPixelConvolutionalBlock(
-#                     channels=n_channels,
-#                     kernel_size=small_kernel_size,
-#                     scaling_factor=2,
-#                 )
-#                 for i in range(n_sub_blocks)
-#             ]
-#         )
-#
-#         # conv_k9n3s1
-#         self.conv_block3 = ConvolutionalBlock(
-#             in_channels=n_channels,
-#             out_channels=3,
-#             kernel_size=large_kernel_size,
-#             is_bn=False,
-#             activation='tanh',
-#         )
-#
-#     def forward(self, x):
-#         residual_output = self.conv_block1(x)
-#         output = self.residual_blocks(residual_output)
-#         output = self.conv_block2(output)
-#         output = output + residual_output
-#         output = self.sub_pixel_shuffle_blocks(output)
-#         output = self.conv_block3(output)
-#         return output
-#
-#
-# class SRGenerator(nn.Module):
-#     """
-#
-#     """
-#     def __init__(
-#             self,
-#             large_kernel_size: int = 9,
-#             small_kernel_size: int = 3,
-#             n_channels: int = 64,
-#             n_blocks: int = 16,
-#             scaling_factor: int = 4
-#     ):
-#         """
-#
-#         """
-#         super().__init__()
-#         self.srresnet = SRResNet(
-#             large_kernel_size=large_kernel_size,
-#             small_kernel_size=small_kernel_size,
-#             n_channels=n_channels,
-#             n_blocks=n_blocks,
-#             scaling_factor=scaling_factor,
-#         )
-#
-#     def forward(self, x):
-#         output = self.srresnet(x)
-#         return output
-#
-#
-# class SRDiscriminator(nn.Module):
-#     """
-#
-#     """
-#     def __init__(
-#             self,
-#             kernel_size: int = 3,
-#             n_channels: int = 64,
-#             n_blocks: int = 8,
-#             fc_size: int = 1024,
-#     ):
-#         """
-#
-#         """
-#         super().__init__()
-#
-#         conv_blocks = []
-#
-#         # the first n_blocks
-#         conv_blocks.append(
-#             ConvolutionalBlock(
-#                 in_channels=3,
-#                 out_channels=n_channels,
-#                 kernel_size=kernel_size,
-#                 stride=1,
-#                 is_bn=False,
-#                 activation='leakyrelu',
-#             )
-#         )
-#
-#         # the rest conv block with bn
-#         in_channel_build = n_channels
-#         for i in range(n_blocks - 1):
-#
-#             # blocks that do down sample and channel up
-#             if i % 2 == 0:
-#                 out_channel_build = in_channel_build
-#                 conv_blocks.append(
-#                     ConvolutionalBlock(
-#                         in_channels=in_channel_build,
-#                         out_channels=out_channel_build,
-#                         kernel_size=kernel_size,
-#                         stride=2,
-#                         is_bn=True,
-#                         activation='leakyrelu',
-#                     )
-#                 )
-#
-#             # blocks that change nothing in shape
-#             else:
-#                 out_channel_build = in_channel_build * 2
-#                 conv_blocks.append(
-#                     ConvolutionalBlock(
-#                         in_channels=in_channel_build,
-#                         out_channels=out_channel_build,
-#                         kernel_size=kernel_size,
-#                         stride=1,
-#                         is_bn=True,
-#                         activation='leakyrelu',
-#                     )
-#                 )
-#                 in_channel_build = in_channel_build * 2
-#
-#         self.conv_blocks = nn.Sequential(*conv_blocks)
-#
-#         # fix output feature size, 96 / 2**4 = 6
-#         self.adaptive_pool = nn.AdaptiveAvgPool2d((6, 6))
-#         self.flatten = nn.Flatten()
-#
-#         # Dense 1024
-#         self.fc1 = nn.Linear(out_channel_build * 6 * 6, fc_size)
-#         self.leaky_relu = nn.LeakyReLU(0.2)
-#
-#         # Dense 1, no sigmoid, included in BCEWithLogitsLoss
-#         self.fc2 = nn.Linear(fc_size, 1)
-#
-#     def forward(self, x):
-#         y = self.conv_blocks(x)
-#         y = self.adaptive_pool(y)
-#         y = self.flatten(y)
-#         y = self.fc1(y)
-#         y = self.leaky_relu(y)
-#         y = self.fc2(y)
-#         return y
+class SimpleArchR(nn.Module):
+    """
+
+    """
+    def __init__(
+            self,
+            large_kernel_size: int = 9,
+            small_kernel_size: int = 3,
+            in_channels: int = 1,
+            n_channels: int = 32,
+            n_blocks: int = 2,
+            activation: str = 'PReLU',
+    ):
+        super().__init__()
+
+        # conv_k9n64s1 PReLU
+        self.conv_block1 = ConvolutionalBlock(
+            in_channels=in_channels,
+            out_channels=n_channels,
+            kernel_size=large_kernel_size,
+            is_bn=False,
+            activation=activation,
+        )
+
+        # residual blocks
+        self.residual_blocks = nn.Sequential(
+            *[
+                ResidualBlock(
+                    kernel_size=small_kernel_size,
+                    channels=n_channels,
+                    pre_activate=False,
+                    is_bn=True,
+                )
+                for i in range(n_blocks)
+            ]
+        )
+
+        # conv_k3n64s1  bn  s1
+        self.conv_block2 = ConvolutionalBlock(
+            in_channels=n_channels,
+            out_channels=n_channels,
+            kernel_size=small_kernel_size,
+            is_bn=True,
+            activation=None,
+        )
+
+        # conv_k9n3s1
+        self.conv_block3 = ConvolutionalBlock(
+            in_channels=n_channels,
+            out_channels=in_channels,
+            kernel_size=large_kernel_size,
+            is_bn=False,
+            activation='tanh',
+        )
+
+    def forward(self, x):
+        residual_output = self.conv_block1(x)
+        output = self.residual_blocks(residual_output)
+        output = self.conv_block2(output)
+        output = output + residual_output
+        output = self.conv_block3(output)
+        return output
 
 
 if __name__ == '__main__':
@@ -320,31 +193,18 @@ if __name__ == '__main__':
     # ta = ta.to(device)
     # summary(ta, input_size=[(10, 96, 96)])
 
-    # Residual Block
-    ta = ResidualBlock(activation='relu', pre_activate=False)
+    # # Residual Block
+    # ta = ResidualBlock(activation='relu', pre_activate=False)
+    # ta = ta.to(device)
+    # summary(ta, input_size=[(64, 24, 24)])
+    # # rand_tensor = torch.randn([1, 64, 24, 24]).to(device)
+    # # out = ta(rand_tensor)
+    # # l = torch.mean(out)
+    # # l.backward()
+
+    # SimpleArchR
+    ta = SimpleArchR()
     ta = ta.to(device)
-    summary(ta, input_size=[(64, 24, 24)])
-    # rand_tensor = torch.randn([1, 64, 24, 24]).to(device)
-    # out = ta(rand_tensor)
-    # l = torch.mean(out)
-    # l.backward()
-
-    # # SRResNet
-    # ta = SRGenerator()
-    # ta = ta.to(device)
-    # summary(ta, input_size=[(3, 24, 24)])
-
-    # # SRDis
-    # ta = SRDiscriminator()
-    # ta = ta.to(device)
-    # summary(ta, input_size=[(3, 96, 96)])
-
-    # # Truncated VGG19
-    # ta = TruncatedVGG19(5, 4)
-    # ta = ta.to(device)
-    # summary(ta, input_size=[(3, 96, 96)])
-
-    # vgg19_pretrained = vgg19(weights=VGG19_Weights.DEFAULT)
-    # print(list(vgg19_pretrained.features.named_children()))
+    summary(ta, input_size=[(1, 260, 130)])
 
 
