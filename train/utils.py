@@ -1,3 +1,10 @@
+import sys
+import time
+import os
+import json
+from json.decoder import JSONDecodeError
+from typing import Optional
+
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,14 +16,13 @@ from torchvision import transforms
 from torchvision.transforms import InterpolationMode
 
 from collections.abc import Callable
-from typing import Optional
 
-import sys
+
+
 
 # ----------------
 #   statistics
 # ----------------
-
 
 def get_stat(train_dataset, channel):
     """
@@ -55,6 +61,43 @@ def get_stat(train_dataset, channel):
 # --------------------
 #   log
 # --------------------
+
+
+# --------------------
+#   训练准备
+# --------------------
+def write_config(config, config_path):
+    """
+    write config file
+    """
+    with open(config_path, 'w') as jsonfile:
+        json.dump(config, jsonfile, indent='\t')
+
+
+def read_config(config_path):
+    """
+    load config
+    """
+    try:
+        with open(config_path, 'r') as jsonfile:
+            try:
+                config = json.load(jsonfile)
+            except JSONDecodeError:
+                print('Not valid json doc!')
+                sys.exit()
+    except FileNotFoundError:
+        print(f'no config file found at \'{config_path}\'')
+        sys.exit()
+    return config
+
+
+def name_folder(
+        suffix: Optional[str] = None
+):
+    naming = time.strftime(f'%Y%m%d_%H%M%S_%A', time.localtime())
+    if suffix:
+        naming += '_' + suffix
+    return naming
 
 
 # --------------------
