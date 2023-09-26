@@ -11,35 +11,22 @@ import os
 import json
 from json.decoder import JSONDecodeError
 import sys
+from typing import Optional
 
-task_config_template = {
-    'task_id': 'None',
+config_template = {
     'create_time': 'None',
     'description': 'None',
     'is_config': False,  # a flag determining the task is configured or not
 
     'train_dataset_config': {
-        'train_dataset_name': 'COCO2014',  # what dataset to use
-        'crop_size': 96,  # cropped HR size
-        'scaling_factor': 4,  # up_scaling
+        'train_dataset_root': 'COCO2014',  # what dataset to use
+        'crop_size': 96,  # crop
     },
     'generator_config': {
         'large_kernel_size_g': 9,  # 第一层卷积和最后一层卷积的核大小
         'small_kernel_size_g': 3,  # 中间层卷积的核大小
-        'n_channels_g': 64,  # 中间层通道数
-        'n_blocks_g': 16,  # 残差模块数量
-        'generator_weight_initial': None
-    },
-    'discriminator_config': {
-        'kernel_size_d': 3,  # 中间层卷积的核大小
-        'n_channels_d': 64,  # the first conv block channel
-        'n_blocks_d': 8,
-        'fc_size_d': 1024,
-    },
-    'perceptual_config': {
-        'vgg19_i': 5,
-        'vgg19_j': 4,
-        'beta': 1e-3,
+        'n_channels_g': 32,  # 中间层通道数
+        'n_blocks_g': 2,  # 残差模块数量
     },
     'hyper_params': {
         'total_epochs': None,
@@ -53,38 +40,72 @@ task_config_template = {
         'worker': 4,
     },
 }
+# 支持外部导入 config，也可以命令行输入
 
+# 针对单个训练任务，参数配置，文件夹建立（中间结果，训练log，loss，模型文件夹checkpoint）
+# 初始化时，传入一个路径，如果不存在，则创建一个完整的新任务，存在则记录路径，并读取配置，然后什么都不做
+# 有三种创建新任务的方式
+# 可以返回配置列表，可以返回具体文件夹路径
+
+# 提供一些命名用的函数
 
 class TaskManager:
     """
-    provide functions to manage a whole program
+    provide functions to manage a task
     """
-    def __init__(self):
+    def __init__(
+            self,
+            task_path: str,
+            external_config_path: Optional[str] = None,
+            cmd_config: Optional[list] = None,
+    ):
         """
         initialization
         """
-        self.__register_list_path = './task_record/register_list.csv'
-        self.__register_list_fieldnames = ['create_time','task_id']
-        self.__register_list = []
+        self.task_path = task_path
+        self.checkpoint_path = os.path.join(task_path, 'checkpoint')
+        self.record_path = os.path.join(task_path, 'record')
+        self.config_path = os.path.join(task_path, 'config.json')
 
-        try:
-            self.__create_register_list()
-            print('TaskManager: tanew project created...')
-        except FileExistsError:
-            print('TaskManager: current project exists, loading...')
-            self.__get_register_list()
+        # new task
+        if not os.path.exists(task_path):
+
+            print('TaskManager: creating new task')
+
+            # create path
+            os.makedirs(self.task_path)
+            os.mkdir(self.checkpoint_path)
+            os.mkdir(self.record_path)
+
+            # config
+            if external_config_path:
+                try:
+                    self.config = self.__read_task_config(external_config_path)
+                except FileNotFoundError:
+                    print(f'TaskManager: no config file found at \'{external_config_path}\'')
+                    sys.exit()
+            elif cmd_config:
+                self.config = cmd_config
+            else:
+                self.config = config_template
+
+            try:
+                self.__write_task_config(config_template, self.config_path)
+            except FileExistsError:
+                print(f'TaskManager: config \'{external_config_path}\' already exists')
+                sys.exit()
+
+        # task already exists
+        else:
+            print('TaskManager: reading existing task')
+            try:
+                self.config = self.__read_task_config(self.config_path)
+            except FileNotFoundError:
+                print(f'TaskManager: no config file found at \'{self.config_path}\'')
+                sys.exit()
+
 
     def new_task(self, new_task_id):
-        """
-        create a new task
-
-        :param new_task_id: a id for a new task
-        :returns: None
-        """
-        # check if task id exists
-        if self.__is_task_registered(new_task_id):
-            print(f'TaskManager: task id \'{new_task_id}\' already exists, choose another one')
-            sys.exit()
 
         # create directory, you can change dir arragement here
         task_brief = {'create_time': time.strftime('%Y%m%d_%H%M_%A', time.localtime()),
@@ -111,13 +132,6 @@ class TaskManager:
 
         # register new task
         self.__add_register_list(task_brief)
-
-    def show_register_list(self):
-        """
-        show register list
-        """
-        for task_brief in self.__register_list:
-            print(task_brief)
 
     def display_task_config(self, task_id):
         """
@@ -166,12 +180,6 @@ class TaskManager:
         }
         return task_path_dict
 
-    # def delete_task(self, task_id):
-    #     """
-    #     never recommend to use
-    #     """
-    #     pass
-
     def __get_task_brief(self, task_id):
         """
         get task brief from reg list
@@ -191,45 +199,6 @@ class TaskManager:
         task_path = os.path.join('task_record', task_dirname)
         return task_path
 
-    def __is_task_registered(self, task_id):
-        """
-        check if task id exists
-        """
-        if task_id in [id.get('task_id') for id in self.__register_list]:
-            return True
-        else:
-            return False
-
-    def __create_register_list(self):
-        """
-        create a csvfile at __register_list_path
-
-        :raises FileExistsError
-        """
-        # 也许可以换 pandas
-        with open(self.__register_list_path, 'x', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=self.__register_list_fieldnames)
-            writer.writeheader()
-
-    def __get_register_list(self):
-        """
-        get register_list from file
-        """
-        with open(self.__register_list_path, 'r', newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            self.__register_list = list(reader)
-
-    def __add_register_list(self, task_brief):
-        """
-        append one task to register_list, and save to file
-        """
-        with open(self.__register_list_path, 'a', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=self.__register_list_fieldnames)
-            writer.writerow(task_brief)
-            self.__register_list.append(task_brief)
-
-    def __write_register_list(self):
-        pass
 
     def __write_task_config(self, config, config_path):
         """
@@ -238,7 +207,7 @@ class TaskManager:
         with open(config_path, 'w') as jsonfile:
             json.dump(config, jsonfile, indent='\t')
 
-    def __get_task_config(self, config_path):
+    def __read_task_config(self, config_path):
         """
         load config
         """
