@@ -5,6 +5,7 @@
 # @File    : all_txt_to_tensor.py
 
 import os
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -15,15 +16,14 @@ import numpy as np
 # 每一帧的时间信息没有处理
 # 解决数据中 nan 的问题，暂时换成 0
 
-
-data_path = r'E:\Research\Project\Heat_simu\data\data2_even\txt_format\0.1K_0.5gap.txt'
-# data_path = r'E:\Research\Project\Heat_simu\data\data2_even\txt_format\0.1K_0.3gap.txt'
-output_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format'
-
-max_T = 400  # 摄氏度
-min_T = 0
-
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='data convert')
+    parser.add_argument("--path", "-p", type=str, default=None, help="the path of txt")
+    args = parser.parse_args()
+
+    data_path = args.path
+    output_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format'
 
     with open(data_path, 'r', encoding='utf-8') as f:
 
@@ -88,6 +88,9 @@ if __name__ == '__main__':
         all_distrib = np.array(data).transpose((1, 0)).reshape((-1, row, column))
         mask = np.array(mask).reshape((row, column))
 
+        # 数据范围
+        print(f'Dmax: {all_distrib.max()}, Dmin: {all_distrib.min()}')
+
         # 保存训练数据
         dir_name, _ = os.path.splitext(os.path.basename(data_path))
         output_dir = os.path.join(output_path, dir_name)
@@ -104,12 +107,12 @@ if __name__ == '__main__':
             plt.imsave(
                 os.path.join(output_dir, f'{i}.png'),
                 all_distrib[i],
-                vmin=min_T,
-                vmax=max_T,
+                vmin=all_distrib.min(),
+                vmax=all_distrib.max(),
                 cmap='jet'
             )
 
-        print('\nconversion complete!')
+        print('\nconversion complete!\n')
 
         # 保存基本信息，未完成
 
