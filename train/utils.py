@@ -61,7 +61,28 @@ def get_stat(train_dataset, channel):
 # --------------------
 #   log
 # --------------------
+def save_img_to_file(imgs, path):
+    torchvision.utils.save_image(imgs, path)
 
+
+def plt_save_image(img, mask, img_path):
+    """
+
+    :param img: numpy 格式图片
+    :param mask:numpy
+    :param img_path:
+    :return:
+    """
+    cmap = plt.cm.get_cmap('jet').copy()
+    cmap.set_under('black')
+    img = img + 10 * (mask - 1)
+    plt.imsave(
+        os.path.join(img_path),
+        img,
+        vmin=-1,
+        vmax=1,
+        cmap=cmap
+    )
 
 # --------------------
 #   训练准备
@@ -154,13 +175,14 @@ def load_loss_file(file_path):
 #   image transforms
 # --------------------
 
-# 输入数据变换,可以加入 crop 和 rotate
+# todo 数据变换，crop，rotate
 def compose_input_transforms():
     trans = [
         transforms.ToTensor(),
         transforms.Normalize(
             mean=141.01774070236965, std=59.57186979412488
         ),
+        DtypeTransform(),
     ]
     return transforms.Compose(trans)
 
@@ -169,6 +191,7 @@ def compose_input_transforms():
 def compose_mask_transforms():
     trans = [
         transforms.ToTensor(),
+        DtypeTransform(),
     ]
     return transforms.Compose(trans)
 
@@ -177,7 +200,8 @@ def compose_mask_transforms():
 def compose_target_transforms(d_min=0, d_max=400):
     trans = [
         transforms.ToTensor(),
-        TargetRangeNorm(d_min, d_max)
+        TargetRangeNorm(d_min, d_max),
+        DtypeTransform(),
     ]
     return transforms.Compose(trans)
 
@@ -196,10 +220,19 @@ class TargetRangeNorm:
         img = (img - self.d_min) / (self.d_max - self.d_min) * 2 - 1
         return img
 
+class DtypeTransform:
+    """
+    to torch.float32
+    """
+    def __call__(self, img):
+        return img.to(torch.float32)
 
-# target to input 变换
+
+# todo target to input 变换
 def target2input_transforms():
     pass
+
+# todo target to 真实温度 变换
 
 # --------------------
 #   dataloader
@@ -221,26 +254,3 @@ class SimuHeatCollater:
 
 
 #########################################################
-def input_transforms(img):
-    """
-    非数据集图像做超分的时候用
-    """
-    trans = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406],  # ImageNet mean and std
-                std=[0.229, 0.224, 0.225],
-            ),
-        ]
-    )
-    return trans(img)
-
-
-def out_transform(img):
-    """
-    from [-1, 1] to [0, 1]
-    """
-    img = (img + 1.) / 2.
-    return img
-

@@ -62,8 +62,7 @@ class DatasetFromFolder(Dataset):
     def __getitem__(self, idx):
         """
         get distributions and mask
-        distribs
-        input index at 0
+        :return x, y, mask
         """
 
         # load
@@ -104,7 +103,7 @@ class DatasetFromFolder(Dataset):
             torch.random.manual_seed(seed)
             mask = self.transform_mask(mask)
 
-        return distribs, mask  # 需要自定义 collate_fn, 主要是 target
+        return distribs[0], distribs[1:], mask  # 需要自定义 collate_fn, 主要是 target
 
     def __len__(self):
         """
@@ -176,9 +175,9 @@ if __name__ == '__main__':
         shuffle=False,
     )
 
-    distribs, mask = next(iter(test_dataloader))
-    print(distribs)
-    print(len(distribs))
+    x, y, mask = next(iter(test_dataloader))
+    print(x)
+    print(len(y))
     print('\n')
     print(mask)
 

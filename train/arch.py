@@ -78,7 +78,9 @@ class ConvolutionalBlock(nn.Module):
         return y
 
 
-# todo 考虑优化残差模块，让跳接线路上没有模块的阻挡
+# todo 多步监督, 这个应该直接写到模型里面去
+# todo 模型升温作为输入
+# todo RNN + hourglass 结构
 class ResidualBlock(nn.Module):
     """
     不需要 down sample
