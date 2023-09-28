@@ -10,8 +10,6 @@ import numpy as np
 import torch
 
 
-# to do：解决数据中 nan 的问题，暂时换成 0
-
 data_path = r'E:\Research\Project\Heat_simu\data\data2_even\txt_format\0.1K_0.1gap.txt'
 
 
@@ -89,7 +87,10 @@ if __name__ == '__main__':
         # visualization
         print(f'the {frame}th frame')
         plt.figure()
-        plt.imshow(distrib, vmin=min_T, vmax=max_T, cmap='jet')  # 建立颜色映射
+        cmap = plt.cm.get_cmap('jet').copy()
+        img = plt.imshow(distrib, vmin=min_T, vmax=max_T, cmap=cmap)  # 建立颜色映射
+
+        img.cmap.set_under('black')
         plt.axis('off')
         plt.show()
 
