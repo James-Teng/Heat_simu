@@ -16,7 +16,7 @@ import numpy as np
 # 解决数据中 nan 的问题，暂时换成 0
 
 
-data_path = r'E:\Research\Project\Heat_simu\data\data2_even\txt_format\0.1K_0.1gap.txt'
+data_path = r'E:\Research\Project\Heat_simu\data\data2_even\txt_format\0.1K_0.5gap.txt'
 # data_path = r'E:\Research\Project\Heat_simu\data\data2_even\txt_format\0.1K_0.3gap.txt'
 output_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format'
 
@@ -108,6 +108,8 @@ if __name__ == '__main__':
                 vmax=max_T,
                 cmap='jet'
             )
+
+        print('\nconversion complete!')
 
         # 保存基本信息，未完成
 
