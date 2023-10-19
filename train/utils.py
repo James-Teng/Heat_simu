@@ -220,6 +220,7 @@ class TargetRangeNorm:
         img = (img - self.d_min) / (self.d_max - self.d_min) * 2 - 1
         return img
 
+
 class DtypeTransform:
     """
     to torch.float32
