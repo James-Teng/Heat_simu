@@ -6,15 +6,37 @@
 
 import os
 import argparse
+import json
+
 import matplotlib.pyplot as plt
 import numpy as np
 
-
-# 文件不大的话，可以整个文件一起放入内存，
-
 # to do：
 # 每一帧的时间信息没有处理
-# 解决数据中 nan 的问题，暂时换成 0
+
+
+def create_data_list(data_folder: str):
+    """
+    make a json-style list file which consists all image paths in data_folder.
+    and filter images smaller than min_size when is_train is True.
+
+    :param data_folder: dataset folder
+    :param min_size: the smallest acceptable image size
+    :param is_train: When True, filter min_size
+
+    :returns: None
+    """
+    image_list = []
+    for root, dirs, files in os.walk(data_folder):  # 可用 遍历 栈实现，但是用 os.walk()
+        for name in files:
+            _, filetype = os.path.splitext(name)
+            if not filetype.lower() in ['.npy']:
+                continue
+            img_path = os.path.join(root, name)
+            image_list.append(img_path)
+    with open(os.path.join(data_folder, 'data_list.json'), 'w') as jsonfile:
+        json.dump(image_list, jsonfile)
+
 
 if __name__ == '__main__':
 
@@ -23,7 +45,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     data_path = args.path
-    output_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format'
+    output_parent_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format'
 
     with open(data_path, 'r', encoding='utf-8') as f:
 
@@ -42,7 +64,7 @@ if __name__ == '__main__':
         print('\n{:-^52}\n'.format(' Processing all data '))
         points = []
         data = []
-        mask = []
+        # mask = []
         line = f.readline().strip('\n')
         run_once = True
 
@@ -59,7 +81,7 @@ if __name__ == '__main__':
             data.append([float(0) if x == 'NaN' else float(x) for x in line_split[2:]])  # 替换所有 NaN 并将数据转换为浮点数
 
             # 生成对应遮罩
-            mask.append(float(0) if line_split[2] == 'NaN' else float(1))
+            # mask.append(float(0) if line_split[2] == 'NaN' else float(1))
 
             # 统计帧总数
             if run_once:
@@ -86,18 +108,18 @@ if __name__ == '__main__':
 
         # 转置矩阵并重构
         all_distrib = np.array(data).transpose((1, 0)).reshape((-1, row, column))
-        mask = np.array(mask).reshape((row, column))
+        # mask = np.array(mask).reshape((row, column))
 
         # 数据范围
         print(f'Dmax: {all_distrib.max()}, Dmin: {all_distrib.min()}')
 
         # 保存训练数据
         dir_name, _ = os.path.splitext(os.path.basename(data_path))
-        output_dir = os.path.join(output_path, dir_name)
+        output_dir = os.path.join(output_parent_path, dir_name)
         os.makedirs(output_dir)
 
-        np.save(os.path.join(output_dir, f'mask.npy'), mask)  # 保存list，读取需要手动转换 list()
-        plt.imsave(os.path.join(output_dir, f'mask.png'), mask)
+        # np.save(os.path.join(output_dir, f'mask.npy'), mask)  # 保存list，读取需要手动转换 list()
+        # plt.imsave(os.path.join(output_dir, f'mask.png'), mask)
 
         for i in range(all_distrib.shape[0]):
             np.save(
@@ -111,6 +133,10 @@ if __name__ == '__main__':
                 vmax=all_distrib.max(),
                 cmap='jet'
             )
+
+        # 生成数据索引列表
+        print('\ngenerating data list...')
+        create_data_list(output_dir)
 
         print('\nconversion complete!\n')
 
