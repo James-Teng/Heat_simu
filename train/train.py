@@ -213,10 +213,6 @@ if __name__ == '__main__':
             loss_epoch.update(loss.item(), mask.shape[0])  # per epoch loss
 
         # record img change
-        # true_gird = make_grid((y*mask)[:2, :, :, :].cpu(), nrow=2, normalize=True)
-        # predict_gird = make_grid((predict*mask)[:2, :, :, :].cpu(), nrow=2, normalize=True)
-        # utils.save_img_to_file(true_gird, os.path.join(record_path, f'epoch_{epoch}_gt.png'))
-        # utils.save_img_to_file(predict_gird, os.path.join(record_path, f'epoch_{epoch}_p.png'))
         utils.plt_save_image(
             y[0, 0, :, :].cpu().numpy(),
             mask[0, 0, :, :].cpu().numpy(),
@@ -228,12 +224,12 @@ if __name__ == '__main__':
             os.path.join(record_path, f'epoch_{epoch}_p.png'),
         )
         # writer.add_image(f'{task_id}/epoch_{epoch}_lr', lr_gird)
-        # del lr_img, hr_img, sr_img, lr_gird, hr_gird, sr_gird
 
         # record loss
         loss_epochs_list.append(loss_epoch.val)
         writer.add_scalar(f'{folder_name}/MSE_Loss', loss_epoch.val, epoch)
 
+        # todo eval
         # todo save best model
         # save model
         torch.save(
