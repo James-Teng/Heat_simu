@@ -5,7 +5,7 @@
 # @File    : datasets.py
 
 import os
-import utils
+import json
 from collections.abc import Callable
 from typing import Optional
 
@@ -18,9 +18,15 @@ import torchvision
 
 import matplotlib.pyplot as plt
 
+import utils
+
 
 # to do:
 # 是否需要将 input 的 transform 改成和 target 是一样的，然后再写一个 target to input 的 trans，这样循环过程会更一致一些
+
+region_casing_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_casing.npy'
+region_supervised_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_supervised.npy'
+
 
 class DatasetFromFolder(Dataset):
     """
@@ -29,11 +35,11 @@ class DatasetFromFolder(Dataset):
     """
     def __init__(
             self,
-            root: str,
+            roots: list[str],
             supervised_range: int = 1,
             transform_input: Optional[Callable] = None,
             transform_target: Optional[Callable] = None,
-            transform_mask: Optional[Callable] = None,
+            transform_region: Optional[Callable] = None,
     ):
         """
         initialization
@@ -44,20 +50,34 @@ class DatasetFromFolder(Dataset):
         :param transform_mask: transforms applied to mask
         :returns: None
         """
-        self.data_folder = root  # 需要具体指定某个数据集的文件夹
+        # self.data_folder_list = roots  # 训练需要包含的数据
         self.transform_input = transform_input
         self.transform_target = transform_target
-        self.transform_mask = transform_mask
+        self.transform_region = transform_region
+        self.image_list = []
 
         # 校验范围是否合法
         assert supervised_range >= 0, "illegal range"
         self.supervised_range = supervised_range
 
-        # 校验地址是否存在
-        assert os.path.exists(self.data_folder), "Folder doesn't exist"
+        lengths = [0]
+        # 创建数据列表
+        for data_folder in roots:
+            # assert os.path.exists(data_folder), "Folder doesn't exist"
+            with open(os.path.join(data_folder, 'data_list.json'), 'r') as jsonfile:
+                tmp = json.load(jsonfile)
+                lengths.append(lengths[-1] + len(tmp))
+                self.image_list.extend(tmp)
 
-        # 统计 len
-        self.length = int(len(os.listdir(self.data_folder))/2 - 1) - self.supervised_range   # 鲁棒性不佳，需要再-1最后一张图没有监督对象
+        lengths.pop(0)
+        self.index_limits = [ll - self.supervised_range - 1 for ll in lengths]
+
+        self.length = len(self.image_list) - len(self.index_limits) * self.supervised_range
+
+        # 加载区域
+        self.region_casing = np.load(region_casing_path)
+        self.region_supervised = np.load(region_supervised_path)
+
 
     def __getitem__(self, idx):
         """
@@ -65,29 +85,25 @@ class DatasetFromFolder(Dataset):
         :return x, y, mask
         """
 
+        # index mapping
+        midx = idx
+        for limit in self.index_limits:
+            if midx > limit:
+                midx += self.supervised_range
+            else:
+                break
+
         # load
         distribs = []
         for i in range(self.supervised_range + 1):
-            distribs.append(
-                np.load(
-                    os.path.join(
-                        self.data_folder,
-                        f'{idx + i}.npy',
-                    )
-                )
-            )
-        mask = np.load(
-            os.path.join(
-                self.data_folder,
-                'mask.npy'
-            )
-        )
+            distribs.append(np.load(self.image_list[midx]))
 
         # transforms 随机过程的顺序需要一致
         # set seed to make sure crop at same position
         seed = torch.random.seed()
 
         # transforms to input
+        distribs[0] = np.stack([distribs[0], self.region_casing], axis=2)  # 扩维拼接通道，加入了损伤后需要修改
         if self.transform_input:
             torch.random.manual_seed(seed)
             distribs[0] = self.transform_input(distribs[0])
@@ -98,12 +114,14 @@ class DatasetFromFolder(Dataset):
                 torch.random.manual_seed(seed)
                 distribs[i] = self.transform_target(distribs[i])
 
-        # transforms to mask
-        if self.transform_mask:
+        # transforms to region
+        if self.transform_region:
             torch.random.manual_seed(seed)
-            mask = self.transform_mask(mask)
+            region_supervised = self.transform_region(self.region_supervised)
+        else:
+            region_supervised = self.region_supervised
 
-        return distribs[0], distribs[1:], mask  # 需要自定义 collate_fn, 主要是 target
+        return distribs[0], distribs[1:], region_supervised  # 需要自定义 collate_fn, 主要是 target
 
     def __len__(self):
         """
@@ -161,10 +179,12 @@ if __name__ == '__main__':
 
     # test for collater
     test_dataset = DatasetFromFolder(
-        r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
+        [
+            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
+        ],
         supervised_range=4,
         transform_input=utils.compose_input_transforms(),
-        transform_mask=utils.compose_mask_transforms(),
+        transform_region=utils.compose_mask_transforms(),
         transform_target=utils.compose_target_transforms(),
     )
     print('dataset length: ', len(test_dataset))
@@ -176,11 +196,10 @@ if __name__ == '__main__':
     )
 
     x, y, mask = next(iter(test_dataloader))
-    print(x)
-    print(len(y))
-    print('\n')
-    print(mask)
-
+    print('target range', len(y))
+    print('input shape', x.shape)
+    print('target shape', y[0].shape)
+    print('mask shape', mask.shape)
 
     # plt.figure()
     # plt.imshow(dis[1].numpy().transpose(1, 2, 0), vmin=-1, vmax=1, cmap='jet')

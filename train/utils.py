@@ -180,7 +180,7 @@ def compose_input_transforms():
     trans = [
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=141.01774070236965, std=59.57186979412488
+            mean=(141.01774070236965, 0,), std=(59.57186979412488, 1,)
         ),
         DtypeTransform(),
     ]
