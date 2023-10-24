@@ -129,6 +129,7 @@ class SimpleArchR(nn.Module):
             large_kernel_size: int = 9,
             small_kernel_size: int = 3,
             in_channels: int = 1,
+            out_channels: int = 1,
             n_channels: int = 32,
             n_blocks: int = 2,
             activation: str = 'PReLU',
@@ -169,7 +170,7 @@ class SimpleArchR(nn.Module):
         # conv_k9n3s1
         self.conv_block3 = ConvolutionalBlock(
             in_channels=n_channels,
-            out_channels=in_channels,
+            out_channels=out_channels,
             kernel_size=large_kernel_size,
             is_bn=False,
             activation='tanh',
