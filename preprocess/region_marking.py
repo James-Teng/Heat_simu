@@ -37,5 +37,5 @@ plt.axis('off')
 plt.show()
 
 # 保存 region
-np.save(os.path.join(path, f'casing_region.npy'), region1)
-np.save(os.path.join(path, f'supervised_region.npy'), region2)
+np.save(os.path.join(path, f'region_casing.npy'), region1)
+np.save(os.path.join(path, f'region_supervised.npy'), region2)
