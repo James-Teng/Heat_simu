@@ -121,11 +121,17 @@ if __name__ == '__main__':
         # np.save(os.path.join(output_dir, f'mask.npy'), mask)  # 保存list，读取需要手动转换 list()
         # plt.imsave(os.path.join(output_dir, f'mask.png'), mask)
 
+        image_list = []
+
         for i in range(all_distrib.shape[0]):
+
+            tmp = os.path.join(output_dir, f'{i}.npy')
             np.save(
-                os.path.join(output_dir, f'{i}.npy'),
+                tmp,
                 all_distrib[i],
             )
+            image_list.append(tmp)
+
             plt.imsave(
                 os.path.join(output_dir, f'{i}.png'),
                 all_distrib[i],
@@ -136,7 +142,8 @@ if __name__ == '__main__':
 
         # 生成数据索引列表
         print('\ngenerating data list...')
-        create_data_list(output_dir)
+        with open(os.path.join(output_dir, 'data_list.json'), 'w') as jsonfile:
+            json.dump(image_list, jsonfile)
 
         print('\nconversion complete!\n')
 
