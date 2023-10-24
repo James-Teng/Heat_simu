@@ -26,6 +26,7 @@ import utils
 
 region_casing_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_casing.npy'
 region_supervised_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_supervised.npy'
+region_data_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_data.npy'
 
 
 class DatasetFromFolder(Dataset):
@@ -77,7 +78,7 @@ class DatasetFromFolder(Dataset):
         # 加载区域
         self.region_casing = np.load(region_casing_path)
         self.region_supervised = np.load(region_supervised_path)
-
+        self.region_data = np.load(region_data_path)
 
     def __getitem__(self, idx):
         """
@@ -107,6 +108,8 @@ class DatasetFromFolder(Dataset):
         if self.transform_input:
             torch.random.manual_seed(seed)
             distribs[0] = self.transform_input(distribs[0])
+            torch.random.manual_seed(seed)
+            distribs[0][0] = distribs[0][0] * self.transform_region(self.region_data)
 
         # transforms to target
         if self.transform_target and self.supervised_range > 0:
@@ -121,7 +124,7 @@ class DatasetFromFolder(Dataset):
         else:
             region_supervised = self.region_supervised
 
-        return distribs[0], distribs[1:], region_supervised  # 需要自定义 collate_fn, 主要是 target
+        return distribs[0], distribs[1:], region_supervised
 
     def __len__(self):
         """
@@ -196,6 +199,8 @@ if __name__ == '__main__':
     )
 
     x, y, mask = next(iter(test_dataloader))
+    # x[0][0] = x[0][0] * mask[0]
+    print(x[0][0])
     print('target range', len(y))
     print('input shape', x.shape)
     print('target shape', y[0].shape)
