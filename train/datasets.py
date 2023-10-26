@@ -184,9 +184,6 @@ if __name__ == '__main__':
     # plt.axis('off')
     # plt.show()
 
-    # # calculate mean and std
-    # print(utils.get_stat(td, 1))
-
     # test for collater
     test_dataset = DatasetFromFolder(
         [
@@ -215,6 +212,9 @@ if __name__ == '__main__':
     print('target shape', y[0].shape)
     print('mask shape', mask.shape)
     print('mask grad', mask.requires_grad)
+
+    # # calculate mean and std
+    # print(utils.get_stat(td, 1))
 
     # plt.figure()
     # plt.imshow(dis[1].numpy().transpose(1, 2, 0), vmin=-1, vmax=1, cmap='jet')
