@@ -39,14 +39,16 @@ if __name__ == '__main__':
     # arg
     parser = argparse.ArgumentParser(description='train Simuheat')
     parser.add_argument("--brief", "-bf", type=str, default=None, help="brief description")
+    # todo 修改设置数据集路径的方式，也许可以套壳在 dataset 中配置路径
     parser.add_argument("--train_dataset_root", "-td", type=str, default=None, help="the root of training dataset")
     parser.add_argument("--crop_size", "-cp", type=int, default=None, help="crop size when training")
     parser.add_argument("--supervised_range", "-sr", type=int, default=1, help="supervised steps")
 
+    # todo 增加对模型输入输出通道的配置
     parser.add_argument("--large_kernel_size", "-lk", type=int, default=9, help="large conv kernel size")
     parser.add_argument("--small_kernel_size", "-sk", type=int, default=3, help="small conv kernel size")
     parser.add_argument("--channels", "-ch", type=int, default=32, help="conv channels")
-    parser.add_argument("--blocks", "-bk", type=int, default=2, help="the number of residual blocks")
+    parser.add_argument("--blocks", "-bk", type=int, default=4, help="the number of residual blocks")
 
     parser.add_argument("--epoch", "-ep", type=int, default=100, help="total epochs to train")
     parser.add_argument("--batch_size", "-bs", type=int, default=16, help="batch size")
@@ -110,6 +112,7 @@ if __name__ == '__main__':
     model = SimpleArchR(
         large_kernel_size=large_kernel_size,
         small_kernel_size=small_kernel_size,
+        in_channels=2,
         n_channels=n_channels,
         n_blocks=n_blocks,
     )
@@ -150,10 +153,18 @@ if __name__ == '__main__':
 
     # dataset
     train_dataset = datasets.DatasetFromFolder(
-        root=dataset_root,
+
+        roots=[
+            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
+            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
+        ],  # 此处暂时不支持命令行配置
+        gaps=[
+            0.1,
+            0.5,
+        ],
         supervised_range=supervised_range,
         transform_input=utils.compose_input_transforms(),
-        transform_mask=utils.compose_mask_transforms(),
+        transform_region=utils.compose_mask_transforms(),
         transform_target=utils.compose_target_transforms(),
     )
     train_dataloader = torch.utils.data.DataLoader(
@@ -195,10 +206,11 @@ if __name__ == '__main__':
             mask = mask.to(device)
 
             # forward
-            predict = model(x*mask)
+            predict = model(x)
 
             # loss
-            loss = criterion(predict*mask, y*mask)
+            loss = criterion(predict * mask, y * mask)  # todo 增加迭代监督
+            # loss = criterion(predict, y * mask)
 
             # backward
             optimizer.zero_grad()
