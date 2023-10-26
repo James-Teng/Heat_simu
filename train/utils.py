@@ -24,6 +24,7 @@ from collections.abc import Callable
 #   statistics
 # ----------------
 
+# todo 换用只需要一次遍历的算法
 def get_stat(train_dataset, channel):
     """
     Compute mean and std for training data
@@ -200,24 +201,34 @@ def compose_mask_transforms():
 def compose_target_transforms(d_min=0, d_max=400):
     trans = [
         transforms.ToTensor(),
-        TargetRangeNorm(d_min, d_max),
+        RangeNorm((d_min, d_max), (-1, 1)),
         DtypeTransform(),
     ]
     return transforms.Compose(trans)
 
 
+# 目标反变换
+def compose_anti_target_transforms(d_min=0, d_max=400):
+    trans = [
+        RangeNorm((-1, 1), (d_min, d_max)),
+    ]
+    return transforms.Compose(trans)
+
+
 # 目标值域范围变换
-class TargetRangeNorm:
+class RangeNorm:
     """
-    input: [d_min, d_max]
-    output:[-1, 1]
+    input: [di_min, di_max]
+    output:[do_min, do_max]
     """
-    def __init__(self, d_min, d_max):
-        self.d_min = d_min
-        self.d_max = d_max
+    def __init__(self, din_minmax: tuple, dout_minmax: tuple):
+        self.di_min = din_minmax[0]
+        self.di_max = din_minmax[1]
+        self.do_min = dout_minmax[0]
+        self.do_max = dout_minmax[1]
 
     def __call__(self, img):
-        img = (img - self.d_min) / (self.d_max - self.d_min) * 2 - 1
+        img = (img - self.di_min) / (self.di_max - self.di_min) * (self.do_max - self.do_min) + self.do_min
         return img
 
 
@@ -228,12 +239,6 @@ class DtypeTransform:
     def __call__(self, img):
         return img.to(torch.float32)
 
-
-# todo target to input 变换
-def target2input_transforms():
-    pass
-
-# todo target to 真实温度 变换
 
 # --------------------
 #   dataloader
@@ -253,5 +258,3 @@ class SimuHeatCollater:
         ).transpose(0, 1)
         return distribs, mask
 
-
-#########################################################
