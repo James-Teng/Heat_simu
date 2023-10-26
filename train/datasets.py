@@ -29,6 +29,7 @@ region_supervised_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_
 region_data_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_data.npy'
 
 
+# todo 配置不同热阻
 class DatasetFromFolder(Dataset):
     """
     Heat simulation Dataset
@@ -37,6 +38,7 @@ class DatasetFromFolder(Dataset):
     def __init__(
             self,
             roots: list[str],
+            gaps: list[float],
             supervised_range: int = 1,
             transform_input: Optional[Callable] = None,
             transform_target: Optional[Callable] = None,
@@ -45,7 +47,7 @@ class DatasetFromFolder(Dataset):
         """
         initialization
 
-        :param root: dataset folder
+        :param roots: dataset folders
         :param transform_input: transforms applied to input
         :param transform_target: transforms applied to target
         :param transform_mask: transforms applied to mask
@@ -56,6 +58,7 @@ class DatasetFromFolder(Dataset):
         self.transform_target = transform_target
         self.transform_region = transform_region
         self.image_list = []
+        self.gaps = gaps
 
         # 校验范围是否合法
         assert supervised_range >= 0, "illegal range"
@@ -88,9 +91,11 @@ class DatasetFromFolder(Dataset):
 
         # index mapping
         midx = idx
+        choose_gap = 0
         for limit in self.index_limits:
             if midx > limit:
                 midx += self.supervised_range
+                choose_gap += 1
             else:
                 break
 
@@ -104,7 +109,9 @@ class DatasetFromFolder(Dataset):
         seed = torch.random.seed()
 
         # transforms to input
-        distribs[0] = np.stack([distribs[0], self.region_casing], axis=2)  # 扩维拼接通道，加入了损伤后需要修改
+        distribs[0] = np.stack(
+            [distribs[0], self.region_casing * self.gaps[choose_gap]], axis=2
+        )  # 扩维拼接通道，加入了损伤后需要修改
         if self.transform_input:
             torch.random.manual_seed(seed)
             distribs[0] = self.transform_input(distribs[0])
@@ -184,7 +191,9 @@ if __name__ == '__main__':
     test_dataset = DatasetFromFolder(
         [
             r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
+            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
         ],
+        gaps=[0.1, 0.5],
         supervised_range=4,
         transform_input=utils.compose_input_transforms(),
         transform_region=utils.compose_mask_transforms(),
@@ -195,16 +204,17 @@ if __name__ == '__main__':
     test_dataloader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=4,
-        shuffle=False,
+        shuffle=True,
     )
 
     x, y, mask = next(iter(test_dataloader))
     # x[0][0] = x[0][0] * mask[0]
-    print(x[0][0])
+    print(x[0][1])
     print('target range', len(y))
     print('input shape', x.shape)
     print('target shape', y[0].shape)
     print('mask shape', mask.shape)
+    print('mask grad', mask.requires_grad)
 
     # plt.figure()
     # plt.imshow(dis[1].numpy().transpose(1, 2, 0), vmin=-1, vmax=1, cmap='jet')
