@@ -176,12 +176,12 @@ def load_loss_file(file_path):
 #   image transforms
 # --------------------
 
-# todo 数据变换，crop，rotate
+# todo 数据增强，crop，rotate
 def compose_input_transforms():
     trans = [
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=(141.01774070236965, 0,), std=(59.57186979412488, 1,)
+            mean=(141.01774070236965,), std=(59.57186979412488,)
         ),
         DtypeTransform(),
     ]
@@ -211,6 +211,17 @@ def compose_target_transforms(d_min=0, d_max=400):
 def compose_anti_target_transforms(d_min=0, d_max=400):
     trans = [
         RangeNorm((-1, 1), (d_min, d_max)),
+    ]
+    return transforms.Compose(trans)
+
+
+# 目标反变换
+def compose_target2input_transforms(d_min=0, d_max=400):
+    trans = [
+        RangeNorm((-1, 1), (d_min, d_max)),
+        transforms.Normalize(
+            mean=(141.01774070236965,), std=(59.57186979412488,)
+        )
     ]
     return transforms.Compose(trans)
 
