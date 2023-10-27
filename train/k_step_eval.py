@@ -28,18 +28,20 @@ import eval_metrics
 
 if __name__ == '__main__':
 
+    k = 10  # k steps forward
+
     checkpoint_path = r'E:\Research\Project\Heat_simu\training_record\20231026_163352_Thursday_test\checkpoint\checkpoint.pth'
     eval_save_path = r'E:\Research\Project\Heat_simu\eval_record'
 
     eval_datasets = [
         # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
-        # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.3gap',
-        r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
+        r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.3gap',
+        # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
     ]
     gaps = [
         # 0.1,
-        # 0.3,
-        0.5,
+        0.3,
+        # 0.5,
     ]
 
     # --------------------------------------------------------------------
@@ -99,7 +101,7 @@ if __name__ == '__main__':
     eval_dataset = datasets.DatasetFromFolder(
         roots=eval_datasets,
         gaps=gaps,
-        supervised_range=1,
+        supervised_range=k,
         transform_input=utils.compose_input_transforms(),
         transform_region=utils.compose_mask_transforms(),
         transform_target=utils.compose_target_transforms(),
@@ -114,7 +116,7 @@ if __name__ == '__main__':
     # record files
     comment = time.strftime(f'%Y-%m-%d_%H-%M-%S', time.localtime())
     with open(record_info_path, 'x') as f:
-        f.write(f'-- one step eval --\n')
+        f.write(f'-- {k} steps eval --\n')
         f.write(f'model path: {checkpoint_path}\n')
         f.write(f'datasets: {eval_datasets}\n')
         f.write(f'eval time: {comment}\n')
@@ -130,33 +132,48 @@ if __name__ == '__main__':
     SSIMs = utils.AverageMeter()
     time_costs = utils.AverageMeter()
 
+    t2i_trans = utils.compose_target2input_transforms()
+
     cnt = 0
     with torch.no_grad():
-        for x, y, casing, mask in tqdm(eval_dataloader, leave=True):
+        for x, y, casing, supervised, data, outer in tqdm(eval_dataloader, leave=True):
 
-            x_casing = datasets.cat_input(x, casing)  # 叠加输入
-            x_casing = x_casing.to(device)
-            y = torch.cat(y, dim=0).to(device)
-            mask = mask.to(device)
+            x = x.to(device)
+            y = torch.stack(y, dim=0).to(device)
 
-            predict = model(x_casing)
+            casing = casing.to(device)
+            supervised = supervised.to(device)
+            data = data.to(device)
+            outer = outer.to(device)
 
-            y_masked = (y * mask).squeeze()
-            predict_masked = (predict * mask).squeeze()
-            psnr = eval_metrics.psnr(y_masked, predict_masked, data_range=2)   # 如何去除空白像素点
+            interval = datasets.cat_input(x, casing)
+            # k steps forward
+            for ii in range(k):
+                interval = model(interval)
+                if ii == k-1:
+                    break
+                # mask非生成区域，配置正确的外壳温度，变换为输入，mask无数据区域，叠加区域
+                interval = interval * supervised + y[ii] * outer
+                interval = t2i_trans(interval) * data
+                interval = datasets.cat_input(interval, casing)
+
+            y_masked = (y[-1] * supervised).squeeze()
+            predict_masked = (interval * supervised).squeeze()
+            psnr = eval_metrics.psnr(y_masked, predict_masked, data_range=2)  # 如何去除空白像素点
             ssim = eval_metrics.ssim(y_masked, predict_masked, data_range=2)
             PSNRs.update(psnr, y.shape[0])
             SSIMs.update(ssim, y.shape[0])
 
             utils.plt_save_image(
-                y[0, 0, :, :].cpu().numpy(),
-                mask[0, 0, :, :].cpu().numpy(),
+                # range batch channel h w
+                y[-1, 0, 0, :, :].cpu().numpy(),
+                supervised[0, 0, :, :].cpu().numpy(),
                 os.path.join(record_path, f'{cnt}_gt.png'),
             )
             utils.plt_save_image(
-                predict[0, 0, :, :].cpu().detach().numpy(),
-                mask[0, 0, :, :].cpu().numpy(),
-                os.path.join(record_path, f'{cnt}_p.png'),
+                interval[0, 0, :, :].cpu().detach().numpy(),
+                supervised[0, 0, :, :].cpu().numpy(),
+                os.path.join(record_path, f'{cnt+k}_p.png'),
             )
             cnt += 1
 

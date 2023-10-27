@@ -198,15 +198,16 @@ if __name__ == '__main__':
 
         loss_epoch = utils.AverageMeter()
         per_epoch_bar = tqdm(train_dataloader, leave=False)
-        for x, y, mask in per_epoch_bar:
+        for x, y, casing, mask in per_epoch_bar:
 
             # to device
-            x = x.to(device)
+            x_casing = datasets.cat_input(x, casing)  # 叠加输入
+            x_casing = x_casing.to(device)
             y = torch.cat(y, dim=0).to(device)
             mask = mask.to(device)
 
             # forward
-            predict = model(x)
+            predict = model(x_casing)
 
             # loss
             loss = criterion(predict * mask, y * mask)  # todo 增加迭代监督

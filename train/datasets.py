@@ -27,9 +27,9 @@ import utils
 region_casing_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_casing.npy'
 region_supervised_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_supervised.npy'
 region_data_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_data.npy'
+region_outer_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_outer.npy'
 
 
-# todo 配置不同热阻
 class DatasetFromFolder(Dataset):
     """
     Heat simulation Dataset
@@ -82,6 +82,7 @@ class DatasetFromFolder(Dataset):
         self.region_casing = np.load(region_casing_path)
         self.region_supervised = np.load(region_supervised_path)
         self.region_data = np.load(region_data_path)
+        self.region_outer = np.load(region_outer_path)
 
     def __getitem__(self, idx):
         """
@@ -109,14 +110,16 @@ class DatasetFromFolder(Dataset):
         seed = torch.random.seed()
 
         # transforms to input
-        distribs[0] = np.stack(
-            [distribs[0], self.region_casing * self.gaps[choose_gap]], axis=2
-        )  # 扩维拼接通道，加入了损伤后需要修改
+
+        # distribs[0] = np.stack(
+        #     [distribs[0], self.region_casing * self.gaps[choose_gap]], axis=2
+        # )  # 扩维拼接通道，加入了损伤后需要修改
+
         if self.transform_input:
             torch.random.manual_seed(seed)
             distribs[0] = self.transform_input(distribs[0])
             torch.random.manual_seed(seed)
-            distribs[0][0] = distribs[0][0] * self.transform_region(self.region_data)
+            distribs[0] = distribs[0] * self.transform_region(self.region_data)
 
         # transforms to target
         if self.transform_target and self.supervised_range > 0:
@@ -127,11 +130,20 @@ class DatasetFromFolder(Dataset):
         # transforms to region
         if self.transform_region:
             torch.random.manual_seed(seed)
+            region_casing = self.transform_region(self.region_casing * self.gaps[choose_gap])
+            torch.random.manual_seed(seed)
             region_supervised = self.transform_region(self.region_supervised)
+            torch.random.manual_seed(seed)
+            region_data = self.transform_region(self.region_data)
+            torch.random.manual_seed(seed)
+            region_outer = self.transform_region(self.region_outer)
         else:
             region_supervised = self.region_supervised
+            region_casing = self.region_casing
+            region_data = self.region_data
+            region_outer = self.region_outer
 
-        return distribs[0], distribs[1:], region_supervised
+        return distribs[0], distribs[1:], region_casing, region_supervised, region_data, region_outer
 
     def __len__(self):
         """
@@ -159,6 +171,10 @@ def SimuHeatDataset(
     """
 
     pass
+
+
+def cat_input(distribution, region):
+    return torch.cat([distribution, region], dim=1)
 
 
 if __name__ == '__main__':
@@ -200,18 +216,20 @@ if __name__ == '__main__':
 
     test_dataloader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=4,
+        batch_size=5,
         shuffle=True,
     )
 
-    x, y, mask = next(iter(test_dataloader))
+    x, y, casing, supervised, data, outer = next(iter(test_dataloader))
     # x[0][0] = x[0][0] * mask[0]
-    print(x[0][1])
+    print(x[0])
     print('target range', len(y))
     print('input shape', x.shape)
     print('target shape', y[0].shape)
-    print('mask shape', mask.shape)
-    print('mask grad', mask.requires_grad)
+    print('casing shape', casing.shape)
+    print('mask shape', supervised.shape)
+    print('mask grad', supervised.requires_grad)
+    print('cat shape', cat_input(x, casing).shape)
 
     # # calculate mean and std
     # print(utils.get_stat(td, 1))
