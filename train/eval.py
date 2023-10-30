@@ -33,13 +33,13 @@ if __name__ == '__main__':
 
     eval_datasets = [
         # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
-        # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.3gap',
-        r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
+        r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.3gap',
+        # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
     ]
     gaps = [
         # 0.1,
-        # 0.3,
-        0.5,
+        0.3,
+        # 0.5,
     ]
 
     # --------------------------------------------------------------------
@@ -132,17 +132,17 @@ if __name__ == '__main__':
 
     cnt = 0
     with torch.no_grad():
-        for x, y, casing, mask in tqdm(eval_dataloader, leave=True):
+        for x, y, casing, supervised, data, outer in tqdm(eval_dataloader, leave=True):
 
             x_casing = datasets.cat_input(x, casing)  # 叠加输入
             x_casing = x_casing.to(device)
             y = torch.cat(y, dim=0).to(device)
-            mask = mask.to(device)
+            supervised = supervised.to(device)
 
             predict = model(x_casing)
 
-            y_masked = (y * mask).squeeze()
-            predict_masked = (predict * mask).squeeze()
+            y_masked = (y * supervised).squeeze()
+            predict_masked = (predict * supervised).squeeze()
             psnr = eval_metrics.psnr(y_masked, predict_masked, data_range=2)   # 如何去除空白像素点
             ssim = eval_metrics.ssim(y_masked, predict_masked, data_range=2)
             PSNRs.update(psnr, y.shape[0])
@@ -150,12 +150,12 @@ if __name__ == '__main__':
 
             utils.plt_save_image(
                 y[0, 0, :, :].cpu().numpy(),
-                mask[0, 0, :, :].cpu().numpy(),
+                supervised[0, 0, :, :].cpu().numpy(),
                 os.path.join(record_path, f'{cnt}_gt.png'),
             )
             utils.plt_save_image(
                 predict[0, 0, :, :].cpu().detach().numpy(),
-                mask[0, 0, :, :].cpu().numpy(),
+                supervised[0, 0, :, :].cpu().numpy(),
                 os.path.join(record_path, f'{cnt}_p.png'),
             )
             cnt += 1

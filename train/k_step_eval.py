@@ -30,7 +30,8 @@ if __name__ == '__main__':
 
     k = 10  # k steps forward
 
-    checkpoint_path = r'E:\Research\Project\Heat_simu\training_record\20231026_163352_Thursday_test\checkpoint\checkpoint.pth'
+    # todo 改成命令行输入
+    checkpoint_path = r'E:\Research\Project\Heat_simu\training_record\20231030_203759_Monday_image_aug_0.1_0.5_ep200\checkpoint\checkpoint.pth'
     eval_save_path = r'E:\Research\Project\Heat_simu\eval_record'
 
     eval_datasets = [

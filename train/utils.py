@@ -176,8 +176,14 @@ def load_loss_file(file_path):
 #   image transforms
 # --------------------
 
-# todo 数据增强，crop，rotate
-def compose_input_transforms():
+def compose_transforms(d_min=0, d_max=400, crop: Optional[int] = None, flip: bool = False):
+    return compose_input_transforms(crop, flip), \
+           compose_mask_transforms(crop, flip), \
+           compose_target_transforms(d_min, d_max, crop=crop, flip=flip)
+
+
+# 输入变换
+def compose_input_transforms(crop: Optional[int] = None, flip: bool = False):
     trans = [
         transforms.ToTensor(),
         transforms.Normalize(
@@ -185,25 +191,52 @@ def compose_input_transforms():
         ),
         DtypeTransform(),
     ]
+    if crop:
+        trans.append(transforms.RandomCrop(crop))
+    if flip:
+        trans.extend(
+            [
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomVerticalFlip(),
+            ]
+        )
     return transforms.Compose(trans)
 
 
 # 遮罩变换
-def compose_mask_transforms():
+def compose_mask_transforms(crop: Optional[int] = None, flip: bool = False):
     trans = [
         transforms.ToTensor(),
         DtypeTransform(),
     ]
+    if crop:
+        trans.append(transforms.RandomCrop(crop))
+    if flip:
+        trans.extend(
+            [
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomVerticalFlip(),
+            ]
+        )
     return transforms.Compose(trans)
 
 
 # 目标变换
-def compose_target_transforms(d_min=0, d_max=400):
+def compose_target_transforms(d_min=0, d_max=400, crop: Optional[int] = None, flip: bool = False):
     trans = [
         transforms.ToTensor(),
         RangeNorm((d_min, d_max), (-1, 1)),
         DtypeTransform(),
     ]
+    if crop:
+        trans.append(transforms.RandomCrop(crop))
+    if flip:
+        trans.extend(
+            [
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomVerticalFlip(),
+            ]
+        )
     return transforms.Compose(trans)
 
 

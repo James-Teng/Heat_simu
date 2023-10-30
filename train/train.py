@@ -152,8 +152,9 @@ if __name__ == '__main__':
         model = nn.DataParallel(model, device_ids=list(range(n_gpu)))  # 之后的项目应该用 nn.DistributedDataParallel
 
     # dataset
-    train_dataset = datasets.DatasetFromFolder(
+    input_trans, mask_trans, target_trans = utils.compose_transforms(crop=96, flip=True)
 
+    train_dataset = datasets.DatasetFromFolder(
         roots=[
             r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
             r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
@@ -163,9 +164,9 @@ if __name__ == '__main__':
             0.5,
         ],
         supervised_range=supervised_range,
-        transform_input=utils.compose_input_transforms(),
-        transform_region=utils.compose_mask_transforms(),
-        transform_target=utils.compose_target_transforms(),
+        transform_input=input_trans,
+        transform_region=mask_trans,
+        transform_target=target_trans,
     )
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
@@ -198,19 +199,19 @@ if __name__ == '__main__':
 
         loss_epoch = utils.AverageMeter()
         per_epoch_bar = tqdm(train_dataloader, leave=False)
-        for x, y, casing, mask in per_epoch_bar:
+        for x, y, casing, supervised, data, outer in per_epoch_bar:
 
             # to device
             x_casing = datasets.cat_input(x, casing)  # 叠加输入
             x_casing = x_casing.to(device)
             y = torch.cat(y, dim=0).to(device)
-            mask = mask.to(device)
+            supervised = supervised.to(device)
 
             # forward
             predict = model(x_casing)
 
             # loss
-            loss = criterion(predict * mask, y * mask)  # todo 增加迭代监督
+            loss = criterion(predict * supervised, y * supervised)  # todo 增加迭代监督
             # loss = criterion(predict, y * mask)
 
             # backward
@@ -223,17 +224,17 @@ if __name__ == '__main__':
             # record loss
             if is_record_iter:
                 loss_iters_list.append(loss.item())
-            loss_epoch.update(loss.item(), mask.shape[0])  # per epoch loss
+            loss_epoch.update(loss.item(), supervised.shape[0])  # per epoch loss
 
         # record img change
         utils.plt_save_image(
             y[0, 0, :, :].cpu().numpy(),
-            mask[0, 0, :, :].cpu().numpy(),
+            supervised[0, 0, :, :].cpu().numpy(),
             os.path.join(record_path, f'epoch_{epoch}_gt.png'),
         )
         utils.plt_save_image(
             predict[0, 0, :, :].cpu().detach().numpy(),
-            mask[0, 0, :, :].cpu().numpy(),
+            supervised[0, 0, :, :].cpu().numpy(),
             os.path.join(record_path, f'epoch_{epoch}_p.png'),
         )
         # writer.add_image(f'{task_id}/epoch_{epoch}_lr', lr_gird)
