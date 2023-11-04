@@ -144,9 +144,3 @@ if __name__ == '__main__':
                 json.dump(path_list, jsonfile)
 
         print('\nconversion complete!\n')
-
-        # 保存基本信息，未完成
-
-        # 不要有相同的时间帧
-
-
