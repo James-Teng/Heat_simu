@@ -7,36 +7,13 @@
 import os
 import argparse
 import json
+import sys
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-# to do：
-# 每一帧的时间信息没有处理
-
-
-def create_data_list(data_folder: str):
-    """
-    make a json-style list file which consists all image paths in data_folder.
-    and filter images smaller than min_size when is_train is True.
-
-    :param data_folder: dataset folder
-    :param min_size: the smallest acceptable image size
-    :param is_train: When True, filter min_size
-
-    :returns: None
-    """
-    image_list = []
-    for root, dirs, files in os.walk(data_folder):  # 可用 遍历 栈实现，但是用 os.walk()
-        for name in files:
-            _, filetype = os.path.splitext(name)
-            if not filetype.lower() in ['.npy']:
-                continue
-            img_path = os.path.join(root, name)
-            image_list.append(img_path)
-    with open(os.path.join(data_folder, 'data_list.json'), 'w') as jsonfile:
-        json.dump(image_list, jsonfile)
-
+logging.basicConfig(level=logging.WARNING)
 
 if __name__ == '__main__':
 
@@ -58,7 +35,8 @@ if __name__ == '__main__':
         # 处理时间信息，未完成,以下三行丢掉了时间信息
         line = f.readline().strip('\n')
         line_split = line.split()  # 按照空格进行分割
-        print(line[1:3])
+        time_info = [float(e[2:]) for e in line_split if e[0] == 't']  # 记录时间
+        type_info = [e for e in line_split if e == 'T' or e == 'dam']  # 记录分布类型
 
         # 读取采样点分布与一帧
         print('\n{:-^52}\n'.format(' Processing all data '))
@@ -121,32 +99,54 @@ if __name__ == '__main__':
         # np.save(os.path.join(output_dir, f'mask.npy'), mask)  # 保存list，读取需要手动转换 list()
         # plt.imsave(os.path.join(output_dir, f'mask.png'), mask)
 
-        image_list = []
-
         for i in range(all_distrib.shape[0]):
 
-            tmp = os.path.join(output_dir, f'{i}.npy')
+            tmp = os.path.join(output_dir, f'{type_info[i]}_{time_info[i]}.npy')
             np.save(
                 tmp,
                 all_distrib[i],
             )
-            image_list.append(tmp)
 
             plt.imsave(
-                os.path.join(output_dir, f'{i}.png'),
+                os.path.join(output_dir, f'{type_info[i]}_{time_info[i]}.png'),
                 all_distrib[i],
                 vmin=all_distrib.min(),
                 vmax=all_distrib.max(),
                 cmap='jet'
             )
 
+        # 生成不同时间间隔的索引
+        interval_dict = {}  # 存放 间隔 - 列表
+        info_list = [{'type_info': type_info[i], 'time_info': time_info[i]} for i in range(len(time_info))]
+        ef = 100  # 避免浮点数精度问题 enlarge_factor, 在整数部分进行加减
+        for i in range(0, len(info_list) - 1):
+            cur_interv = int(info_list[i + 1]['time_info'] * ef) - int(info_list[i]['time_info'] * ef)
+            if cur_interv not in interval_dict.keys() and cur_interv != 0:  # 记录新间隔
+                interval_dict[cur_interv] = [info_list[i]]
+            for interval, image_list in interval_dict.items():
+                if int(info_list[i + 1]['time_info'] * ef) - int(image_list[-1]['time_info'] * ef) == interval:
+                    image_list.append(info_list[i + 1])  # 迭代变量是引用
+
+        logging.debug(json.dumps(interval_dict, indent='\t'))
+
+        image_indexes_dict = {}
+        for interval, image_list in interval_dict.items():
+            image_indexes_dict[float(interval) / ef] = image_list  # 恢复为真实时间间隔
+
+        del interval_dict
+
         # 生成数据索引列表
         print('\ngenerating data list...')
-        with open(os.path.join(output_dir, 'data_list.json'), 'w') as jsonfile:
-            json.dump(image_list, jsonfile)
+        key = ['type_info', 'time_info']
+        for interval, info_list in image_indexes_dict.items():
+            with open(os.path.join(output_dir, f'data_list_interval_{interval}.json'), 'w') as jsonfile:
+                path_list = [os.path.join(output_dir, f'{info[key[0]]}_{info[key[1]]}.npy') for info in info_list]
+                json.dump(path_list, jsonfile)
 
         print('\nconversion complete!\n')
 
         # 保存基本信息，未完成
+
+        # 不要有相同的时间帧
 
 

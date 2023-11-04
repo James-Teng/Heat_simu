@@ -5,6 +5,7 @@
 # @File    : single_frame_txt_to_tensor.py
 
 import os
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -30,7 +31,12 @@ if __name__ == '__main__':
         # 处理时间信息，未完成,以下三行丢掉了时间信息
         line = f.readline().strip('\n')
         line_split = line.split()  # 按照空格进行分割
-        print(line[1:3])
+        print(line_split)
+        time_info = [float(e[2:]) for e in line_split if e[0] == 't']  # 记录时间
+        type_info = [e for e in line_split if e == 'T' or e == 'dam']  # 记录分布类型
+        # print(type_info[:5])
+        # print(time_info[:5])
+        # print(time_info) 统计时间信息
 
         # 读取采样点分布与一帧
         print('\n{:-^52}\n'.format(' One Frame '))
