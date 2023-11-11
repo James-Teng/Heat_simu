@@ -15,6 +15,8 @@ import numpy as np
 
 logging.basicConfig(level=logging.WARNING)
 
+# todo 保存更多的数据信息
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='data convert')

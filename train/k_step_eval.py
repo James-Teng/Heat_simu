@@ -1,4 +1,5 @@
 # todo 保存参数来源，在什么数据集上测试的
+# todo 记录 psnr 最大最小
 
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -28,14 +29,20 @@ import eval_metrics
 
 if __name__ == '__main__':
 
-    k = 10  # k steps forward
+    k = 5  # k steps forward
 
     # todo 改成命令行输入
-    checkpoint_path = r'E:\Research\Project\Heat_simu\training_record\20231030_203759_Monday_image_aug_0.1_0.5_ep200\checkpoint\checkpoint.pth'
+    checkpoint_path = r'E:\Research\Project\Heat_simu\training_record\20231104_163521_Saturday_interval1000_flip_0.1_0.5\checkpoint\checkpoint.pth'
     eval_save_path = r'E:\Research\Project\Heat_simu\eval_record'
 
-    eval_datasets = [
-        # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
+    # 数据集配置
+    time_intervals = [  # 指定时间间隔
+        '1000.0',
+        # '10.0',
+        # '0.1',
+    ]
+    roots = [
+        # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',  # 数据所在的文件夹
         r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.3gap',
         # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
     ]
@@ -99,16 +106,16 @@ if __name__ == '__main__':
     model.eval()
 
     # dataset
-    eval_dataset = datasets.DatasetFromFolder(
-        roots=eval_datasets,
+    datasets_dict = datasets.SimuHeatDataset(
+        time_intervals=time_intervals,
+        roots=roots,
         gaps=gaps,
         supervised_range=k,
-        transform_input=utils.compose_input_transforms(),
-        transform_region=utils.compose_mask_transforms(),
-        transform_target=utils.compose_target_transforms(),
+        flip=False,
+        crop_size=None
     )
     eval_dataloader = torch.utils.data.DataLoader(
-        eval_dataset,
+        datasets_dict[time_intervals[0]],
         batch_size=1,
         shuffle=False,
         pin_memory=True,
@@ -119,7 +126,8 @@ if __name__ == '__main__':
     with open(record_info_path, 'x') as f:
         f.write(f'-- {k} steps eval --\n')
         f.write(f'model path: {checkpoint_path}\n')
-        f.write(f'datasets: {eval_datasets}\n')
+        f.write(f'datasets: {roots}\n')
+        f.write(f'time interval: {time_intervals}\n')
         f.write(f'eval time: {comment}\n')
 
     # --------------------------------------------------------------------

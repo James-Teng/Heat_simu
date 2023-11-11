@@ -12,33 +12,33 @@ from json.decoder import JSONDecodeError
 import sys
 from typing import Optional
 
-# config_template = {
-#     'create_time': 'None',
-#     'description': 'None',
-#
-#     'train_dataset_config': {
-#         'train_dataset_root': '',  # what dataset to use
-#         'crop_size': 96,  # crop
-#     },
-#     'model_config': {
-#         'large_kernel_size': 9,  # 第一层卷积和最后一层卷积的核大小
-#         'small_kernel_size': 3,  # 中间层卷积的核大小
-#         'n_channels': 32,  # 中间层通道数
-#         'n_blocks': 2,  # 残差模块数量
-#     },
-#     'hyper_params': {
-#         'total_epochs': None,
-#         'batch_size': None,
-#         'lr_initial': None,
-#         'lr_decay_gamma': None,
-#         'lr_milestones': [],
-#     },
-#     'others': {
-#         'n_gpu': 1,
-#         'worker': 4,
-#     },
-#     'resume': None
-# }
+config_template = {
+    'create_time': 'None',
+    'description': 'None',
+
+    'train_dataset_config': {
+        'train_dataset_root': '',  # what dataset to use
+        'crop_size': 96,  # crop
+    },
+    'model_config': {
+        'large_kernel_size': 9,  # 第一层卷积和最后一层卷积的核大小
+        'small_kernel_size': 3,  # 中间层卷积的核大小
+        'n_channels': 32,  # 中间层通道数
+        'n_blocks': 2,  # 残差模块数量
+    },
+    'hyper_params': {
+        'total_epochs': None,
+        'batch_size': None,
+        'lr_initial': None,
+        'lr_decay_gamma': None,
+        'lr_milestones': [],
+    },
+    'others': {
+        'n_gpu': 1,
+        'worker': 4,
+    },
+    'resume': None
+}
 #
 #
 # # 暂时没用

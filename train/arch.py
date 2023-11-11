@@ -5,12 +5,10 @@
 # @File    : arch.py
 
 
+from typing import Optional
+
 import torch
 from torch import nn
-from torchvision.models import vgg19, VGG19_Weights, resnet34, ResNet34_Weights
-import torchvision
-
-from typing import Optional
 
 from torchsummary import summary
 
@@ -79,8 +77,8 @@ class ConvolutionalBlock(nn.Module):
 
 
 # todo 多步监督, 这个应该直接写到模型里面去
-# todo 模型升温作为输入
 # todo RNN + hourglass 结构
+# todo 单独使用一个卷积来得到最后的内壳温度分布
 class ResidualBlock(nn.Module):
     """
     不需要 down sample

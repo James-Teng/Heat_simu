@@ -37,8 +37,8 @@ class DatasetFromFolder(Dataset):
     """
     def __init__(
             self,
-            roots: list[str],
-            gaps: list[float],
+            image_list_paths: list[str],  # 需要提供数据列表所在的位置
+            gaps: Optional[list[float]] = None,
             supervised_range: int = 1,
             transform_input: Optional[Callable] = None,
             transform_target: Optional[Callable] = None,
@@ -47,10 +47,10 @@ class DatasetFromFolder(Dataset):
         """
         initialization
 
-        :param roots: dataset folders
+        :param image_list_paths: dataset folders
         :param transform_input: transforms applied to input
         :param transform_target: transforms applied to target
-        :param transform_mask: transforms applied to mask
+        :param transform_region: transforms applied to mask
         :returns: None
         """
         # self.data_folder_list = roots  # 训练需要包含的数据
@@ -66,9 +66,9 @@ class DatasetFromFolder(Dataset):
 
         lengths = [0]
         # 创建数据列表
-        for data_folder in roots:
+        for data_list in image_list_paths:
             # assert os.path.exists(data_folder), "Folder doesn't exist"
-            with open(os.path.join(data_folder, 'data_list.json'), 'r') as jsonfile:
+            with open(data_list, 'r') as jsonfile:
                 tmp = json.load(jsonfile)
                 lengths.append(lengths[-1] + len(tmp))
                 self.image_list.extend(tmp)
@@ -154,23 +154,48 @@ class DatasetFromFolder(Dataset):
 
 # todo 是否需要这一层的封装？目前来说需要区分 是否为训练 是否裁切 是否旋转 监督范围
 def SimuHeatDataset(
-        root: str,
-        train: bool,
-        rotate: bool,
-        supervised_range: int,
+        roots: list[str],  # 需要包含的训练数据
+        gaps: list[float],  # 上述数据其对应的 热阻
+        time_intervals: list[str],  # 期望的时间间隔，返回相同数量的数据集
+        supervised_range: int = 1,
+        flip: bool = True,
         crop_size: Optional[int] = None,
-) -> DatasetFromFolder:
+) -> dict:
     """
-    build a dataset, and compose transforms
+    build datasets, and compose transforms
 
-    :param root:
-        dataset root
+    :param roots: dataset roots
+    :param gaps:
+    :param time_intervals:
+    :param supervised_range:
+    :param flip:
+    :param crop_size:
 
     :returns:
         the configured dataset
     """
 
-    pass
+    # transforms
+    input_trans, mask_trans, target_trans = utils.compose_transforms(crop=crop_size, flip=flip)
+
+    # make datasets
+    simu_heat_datasets = {}
+    for interv in time_intervals:
+        image_list_paths = [
+            os.path.join(r, f'data_list_interval_{interv}.json')
+            for r in roots
+            if os.path.isfile(os.path.join(r, f'data_list_interval_{interv}.json'))
+        ]
+        simu_heat_datasets[interv] = DatasetFromFolder(
+            image_list_paths=image_list_paths,
+            gaps=gaps,
+            supervised_range=supervised_range,
+            transform_input=input_trans,
+            transform_target=target_trans,
+            transform_region=mask_trans,
+        )
+
+    return simu_heat_datasets
 
 
 def cat_input(distribution, region):
@@ -200,36 +225,36 @@ if __name__ == '__main__':
     # plt.axis('off')
     # plt.show()
 
-    # test for collater
-    test_dataset = DatasetFromFolder(
-        [
-            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
-            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
-        ],
-        gaps=[0.1, 0.5],
-        supervised_range=4,
-        transform_input=utils.compose_input_transforms(),
-        transform_region=utils.compose_mask_transforms(),
-        transform_target=utils.compose_target_transforms(),
-    )
-    print('dataset length: ', len(test_dataset))
-
-    test_dataloader = torch.utils.data.DataLoader(
-        test_dataset,
-        batch_size=5,
-        shuffle=True,
-    )
-
-    x, y, casing, supervised, data, outer = next(iter(test_dataloader))
-    # x[0][0] = x[0][0] * mask[0]
-    print(x[0])
-    print('target range', len(y))
-    print('input shape', x.shape)
-    print('target shape', y[0].shape)
-    print('casing shape', casing.shape)
-    print('mask shape', supervised.shape)
-    print('mask grad', supervised.requires_grad)
-    print('cat shape', cat_input(x, casing).shape)
+    # # test
+    # test_dataset = DatasetFromFolder(
+    #     [
+    #         r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
+    #         r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
+    #     ],
+    #     gaps=[0.1, 0.5],
+    #     supervised_range=4,
+    #     transform_input=utils.compose_input_transforms(),
+    #     transform_region=utils.compose_mask_transforms(),
+    #     transform_target=utils.compose_target_transforms(),
+    # )
+    # print('dataset length: ', len(test_dataset))
+    #
+    # test_dataloader = torch.utils.data.DataLoader(
+    #     test_dataset,
+    #     batch_size=5,
+    #     shuffle=True,
+    # )
+    #
+    # x, y, casing, supervised, data, outer = next(iter(test_dataloader))
+    # # x[0][0] = x[0][0] * mask[0]
+    # print(x[0])
+    # print('target range', len(y))
+    # print('input shape', x.shape)
+    # print('target shape', y[0].shape)
+    # print('casing shape', casing.shape)
+    # print('mask shape', supervised.shape)
+    # print('mask grad', supervised.requires_grad)
+    # print('cat shape', cat_input(x, casing).shape)
 
     # # calculate mean and std
     # print(utils.get_stat(td, 1))
@@ -239,5 +264,29 @@ if __name__ == '__main__':
     # plt.axis('off')
     # plt.show()
 
+    # SimuheatDataset 使用实例
+    dataset_dict = SimuHeatDataset(
+        time_intervals=[
+            '1000.0',
+            '10.0',
+            '0.1',
+        ],  # 指定时间间隔
+        roots=[
+            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',  # 数据所在的文件夹
+            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.3gap',
+            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
+        ],
+        gaps=[
+            0.1,
+            0.3,
+            0.5,
+        ],
+        supervised_range=1,
+        flip=True,
+        crop_size=None
+    )
 
-
+    print(dataset_dict)
+    print(len(dataset_dict['1000.0']))
+    print(len(dataset_dict['10.0']))
+    print(len(dataset_dict['0.1']))
