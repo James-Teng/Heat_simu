@@ -22,12 +22,9 @@ import utils
 from arch import SimpleArchR
 import datasets
 
+import training_manage
+
 # bug: 出过一次多线程的问题 DataLoader worker (pid(s) 20940) exited unexpectedly
-
-# todo 重构任务加载
-# 首先判断 命令行有没有指定恢复（会指定恢复的任务信息路径 info 的路径），从指定的任务中进行恢复（新建），保存上一任务的位置（在新 info 中）
-# 如果没有指定恢复，套用模板，根据命令行修改模板，然后初始化，并保存信息
-
 
 if __name__ == '__main__':
 
@@ -45,22 +42,45 @@ if __name__ == '__main__':
     # 数据集
     parser.add_argument("--crop_size", "-cp", type=int, default=None, help="crop size when training")
     parser.add_argument("--supervised_range", "-sr", type=int, default=1, help="supervised steps")
-    parser.add_argument("--time_intervals", "-ti", nargs='+', type=str, default=['1000.0'], help="time intervals")
+    parser.add_argument("--flip", type=bool, default=True, help="flip")
+    parser.add_argument(
+        "--time_intervals", "-ti", nargs='+', type=str,
+        default=[
+            # '1000.0',
+            '10.0'
+        ],
+        help="time intervals"
+    )
     parser.add_argument(
         "--data_roots", "-dr", nargs='+', type=str,
         default=[
-            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',  # 数据所在的文件夹
-            # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.3gap',
-            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
+            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.1',  # 数据所在的文件夹
+            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.2',
+            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.3',
+            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.4',
+            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.5',
+            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.6',
+            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.7',
+            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.8',
+            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.9',
+            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap1.0',
         ],
         help="where data is",
     )
+    parser.add_argument("--enable_gaps", type=bool, default=True, help="involving gaps feature")  # 没有实现在数据集和模型上
     parser.add_argument(
         "--gaps", "-gap", nargs='+', type=float,
         default=[
             0.1,
-            # 0.3,
+            0.2,
+            0.3,
+            0.4,
             0.5,
+            0.6,
+            0.7,
+            0.8,
+            0.9,
+            1.0,
         ],
         help="shell gaps",
     )
@@ -75,7 +95,7 @@ if __name__ == '__main__':
 
     # 训练
     parser.add_argument("--epoch", "-ep", type=int, default=100, help="total epochs to train")
-    parser.add_argument("--batch_size", "-bs", type=int, default=16, help="batch size")
+    parser.add_argument("--batch_size", "-bs", type=int, default=24, help="batch size")
     parser.add_argument("--lr_initial", "-lr", type=float, default=1e-4, help="learning rate")
     parser.add_argument("--lr_decay_gamma", "-lr_dg", type=float, default=1, help="learning rate decay gamma")
     parser.add_argument("--lr_milestones", "-ms", nargs='+', type=int, default=[], help="lr milestones eg: 1 2 3")
@@ -93,9 +113,8 @@ if __name__ == '__main__':
         task_path = resume
         checkpoint_path = os.path.join(task_path, 'checkpoint')
         record_path = os.path.join(task_path, 'record')
-        # 重新加载配置，命令行的
-        # args = 恢复得到的 args
-        pass
+        config_path = os.path.join(task_path, 'config.json')
+        args = training_manage.read_config(config_path)
 
     # # new training
     else:
@@ -104,6 +123,7 @@ if __name__ == '__main__':
         task_path = os.path.join(train_save_path, folder_name)
         checkpoint_path = os.path.join(task_path, 'checkpoint')
         record_path = os.path.join(task_path, 'record')
+        config_path = os.path.join(task_path, 'config.json')
 
         # create folders
         os.makedirs(task_path)
@@ -114,11 +134,13 @@ if __name__ == '__main__':
     print('\n{:-^52}\n'.format(' TASK CONFIG '))
     print(json.dumps(args, indent='\t'))
 
+    # todo 考虑是否有必要存在变量里
     # here to load config
     time_intervals = args['time_intervals']
     roots = args['data_roots']
     gaps = args['gaps']
     crop_size = args['crop_size']
+    flip = args['flip']
     supervised_range = args['supervised_range']
 
     large_kernel_size = args['large_kernel_size']
@@ -132,15 +154,14 @@ if __name__ == '__main__':
     batch_size = args['batch_size']
     lr = args['lr_initial']
     lr_decay_gamma = args['lr_decay_gamma']
-    lr_milestone = args['lr_milestone']
+    lr_milestone = args['lr_milestones']
 
     n_gpu = args['n_gpu']
     worker = args['worker']
 
-    # todo 存储配置，
+    # 存储配置
     if not resume:
-        # 保存配置
-        pass
+        training_manage.write_config(args, config_path)
 
     # --------------------------------------------------------------------
     #  Initialization
@@ -200,9 +221,9 @@ if __name__ == '__main__':
         time_intervals=time_intervals,
         roots=roots,
         gaps=gaps,
-        supervised_range=1,
-        flip=True,
-        crop_size=None
+        supervised_range=supervised_range,
+        flip=flip,
+        crop_size=crop_size,
     )
 
     train_dataloader = torch.utils.data.DataLoader(
@@ -239,7 +260,7 @@ if __name__ == '__main__':
         for x, y, casing, supervised, data, outer in per_epoch_bar:
 
             # to device
-            x_casing = datasets.cat_input(x, casing)  # 叠加输入
+            x_casing = datasets.cat_input(x, casing)  # 叠加输入 # todo 输入的过程搬到模型中进行，模型封装一层，可以更换 backbone
             x_casing = x_casing.to(device)
             y = torch.cat(y, dim=0).to(device)
             supervised = supervised.to(device)
