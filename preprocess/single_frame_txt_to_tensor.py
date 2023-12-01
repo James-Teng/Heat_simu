@@ -4,6 +4,8 @@
 # @Author  : James.T
 # @File    : single_frame_txt_to_tensor.py
 
+import _init_cwd  # change cwd
+
 import os
 import sys
 import matplotlib.pyplot as plt
@@ -11,7 +13,7 @@ import numpy as np
 import torch
 
 
-data_path = r'E:\Research\Project\Heat_simu\data\data2_even\txt_format\0.1K_0.1gap.txt'
+data_path = r'./data/data2_even/txt_format/0.1K_0.1gap.txt'
 
 
 frame = 0  # index from 0 to max - 1

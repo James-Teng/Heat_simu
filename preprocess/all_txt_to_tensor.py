@@ -4,6 +4,8 @@
 # @Author  : James.T
 # @File    : all_txt_to_tensor.py
 
+import _init_cwd  # change cwd
+
 import os
 import argparse
 import json
@@ -24,7 +26,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     data_path = args.path
-    output_parent_path = r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval'
+    output_parent_path = r'./data/data3_gap/tensor_format_2interval'
 
     with open(data_path, 'r', encoding='utf-8') as f:
 
