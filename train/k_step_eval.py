@@ -31,13 +31,14 @@ import eval_metrics
 # todo 适配 train config
 if __name__ == '__main__':
 
-    k = 10  # k steps forward
     eval_save_path = r'./eval_record'
 
     parser = argparse.ArgumentParser(description='k step eval')
+    parser.add_argument("-k", type=int, default=10, help="k steps forward")
     parser.add_argument("--checkpoint", '-c', type=str, default=None, help="weight path")
     args = vars(parser.parse_args())
     checkpoint_path = args['checkpoint']
+    k = args['k']
 
     # 数据集配置
     time_intervals = [  # 指定时间间隔
