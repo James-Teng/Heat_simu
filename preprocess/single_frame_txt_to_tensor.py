@@ -15,7 +15,6 @@ import torch
 
 data_path = r'./data/data2_even/txt_format/0.1K_0.1gap.txt'
 
-
 frame = 0  # index from 0 to max - 1
 max_T = 400  # 摄氏度
 min_T = 0
