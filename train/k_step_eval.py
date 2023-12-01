@@ -7,6 +7,8 @@
 # @Author  : James.T
 # @File    : eval.py
 
+import _init_cwd  # change cwd
+
 import sys
 import os
 import argparse
@@ -26,14 +28,16 @@ from arch import SimpleArchR
 import datasets
 import eval_metrics
 
-
+# todo 适配 train config
 if __name__ == '__main__':
 
-    k = 5  # k steps forward
+    k = 10  # k steps forward
+    eval_save_path = r'./eval_record'
 
-    # todo 改成命令行输入
-    checkpoint_path = r'E:\Research\Project\Heat_simu\training_record\20231104_163521_Saturday_interval1000_flip_0.1_0.5\checkpoint\checkpoint.pth'
-    eval_save_path = r'E:\Research\Project\Heat_simu\eval_record'
+    parser = argparse.ArgumentParser(description='k step eval')
+    parser.add_argument("--checkpoint", '-c', type=str, default=None, help="weight path")
+    args = vars(parser.parse_args())
+    checkpoint_path = args['checkpoint']
 
     # 数据集配置
     time_intervals = [  # 指定时间间隔
@@ -42,16 +46,29 @@ if __name__ == '__main__':
         # '0.1',
     ]
     roots = [
-        # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',  # 数据所在的文件夹
-        r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.3gap',
-        # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
+            r'./data/data3_gap/tensor_format_2interval/gap0.1',  # 数据所在的文件夹
+            # r'./data/data3_gap/tensor_format_2interval/gap0.2',
+            # r'./data/data3_gap/tensor_format_2interval/gap0.3',
+            # r'./data/data3_gap/tensor_format_2interval/gap0.4',
+            # r'./data/data3_gap/tensor_format_2interval/gap0.5',
+            # r'./data/data3_gap/tensor_format_2interval/gap0.6',
+            # r'./data/data3_gap/tensor_format_2interval/gap0.7',
+            # r'./data/data3_gap/tensor_format_2interval/gap0.8',
+            # r'./data/data3_gap/tensor_format_2interval/gap0.9',
+            # r'./data/data3_gap/tensor_format_2interval/gap1.0',
     ]
     gaps = [
-        # 0.1,
-        0.3,
+        0.1,
+        # 0.2,
+        # 0.3,
+        # 0.4,
         # 0.5,
+        # 0.6,
+        # 0.7,
+        # 0.8,
+        # 0.9,
+        # 1.0,
     ]
-
     # --------------------------------------------------------------------
     #  config
     # --------------------------------------------------------------------

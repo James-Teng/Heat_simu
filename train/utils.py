@@ -17,9 +17,6 @@ from torchvision.transforms import InterpolationMode
 
 from collections.abc import Callable
 
-
-
-
 # ----------------
 #   statistics
 # ----------------
@@ -183,6 +180,7 @@ def compose_transforms(d_min=0, d_max=400, crop: Optional[int] = None, flip: boo
 
 
 # 输入变换
+# todo gaps 层的数据分布是否需要统计
 def compose_input_transforms(crop: Optional[int] = None, flip: bool = False):
     trans = [
         transforms.ToTensor(),

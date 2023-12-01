@@ -4,6 +4,7 @@
 # @Author  : James.T
 # @File    : arch.py
 
+import _init_cwd  # change cwd
 
 from typing import Optional
 
@@ -118,6 +119,7 @@ class ResidualBlock(nn.Module):
         return y + x
 
 
+# todo 加入 dropout
 class SimpleArchR(nn.Module):
     """
 

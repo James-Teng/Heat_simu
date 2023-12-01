@@ -4,6 +4,8 @@
 # @Author  : James.T
 # @File    : datasets.py
 
+import _init_cwd  # change cwd
+
 import os
 import json
 from collections.abc import Callable
@@ -24,10 +26,10 @@ import utils
 # to do:
 # 是否需要将 input 的 transform 改成和 target 是一样的，然后再写一个 target to input 的 trans，这样循环过程会更一致一些
 
-region_casing_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_casing.npy'
-region_supervised_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_supervised.npy'
-region_data_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_data.npy'
-region_outer_path = r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\region_outer.npy'
+region_casing_path = r'./data/data2_even/tensor_format/region_casing.npy'
+region_supervised_path = r'./data/data2_even/tensor_format/region_supervised.npy'
+region_data_path = r'./data/data2_even/tensor_format/region_data.npy'
+region_outer_path = r'./data/data2_even/tensor_format/region_outer.npy'
 
 
 class DatasetFromFolder(Dataset):
@@ -272,9 +274,9 @@ if __name__ == '__main__':
             '0.1',
         ],  # 指定时间间隔
         roots=[
-            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',  # 数据所在的文件夹
-            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.3gap',
-            r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
+            r'./data/data2_even/tensor_format/0.1K_0.1gap',  # 数据所在的文件夹
+            r'./data/data2_even/tensor_format/0.1K_0.3gap',
+            r'./data/data2_even/tensor_format/0.1K_0.5gap',
         ],
         gaps=[
             0.1,

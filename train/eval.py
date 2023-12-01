@@ -6,6 +6,8 @@
 # @Author  : James.T
 # @File    : eval.py
 
+import _init_cwd  # change cwd
+
 import sys
 import os
 import argparse
@@ -28,8 +30,8 @@ import eval_metrics
 
 if __name__ == '__main__':
 
-    checkpoint_path = r'E:\Research\Project\Heat_simu\training_record\20231104_163521_Saturday_interval1000_flip_0.1_0.5\checkpoint\checkpoint.pth'
-    eval_save_path = r'E:\Research\Project\Heat_simu\eval_record'
+    checkpoint_path = r'./training_record/20231104_163521_Saturday_interval1000_flip_0.1_0.5/checkpoint/checkpoint.pth'
+    eval_save_path = r'./eval_record'
 
     # 数据集配置
     time_intervals = [  # 指定时间间隔
@@ -38,9 +40,9 @@ if __name__ == '__main__':
         # '0.1',
     ]
     roots = [
-        # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',  # 数据所在的文件夹
-        r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.3gap',
-        # r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
+        # r'./data/data2_even/tensor_format/0.1K_0.1gap',  # 数据所在的文件夹
+        r'./data/data2_even/tensor_format/0.1K_0.3gap',
+        # r'./data/data2_even/tensor_format/0.1K_0.5gap',
     ]
     gaps = [
         # 0.1,

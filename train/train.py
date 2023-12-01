@@ -4,6 +4,8 @@
 # @Author  : James.T
 # @File    : train.py
 
+import _init_cwd  # change cwd
+
 import sys
 import os
 import argparse
@@ -16,7 +18,6 @@ import torch
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 from tensorboard import program
-from torchvision.utils import make_grid
 
 import utils
 from arch import SimpleArchR
@@ -29,7 +30,7 @@ import training_manage
 if __name__ == '__main__':
 
     is_record_iter = False
-    train_save_path = r'E:\Research\Project\Heat_simu\training_record'
+    train_save_path = r'./training_record'
 
     # --------------------------------------------------------------------
     #  config
@@ -54,16 +55,16 @@ if __name__ == '__main__':
     parser.add_argument(
         "--data_roots", "-dr", nargs='+', type=str,
         default=[
-            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.1',  # 数据所在的文件夹
-            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.2',
-            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.3',
-            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.4',
-            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.5',
-            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.6',
-            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.7',
-            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.8',
-            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap0.9',
-            r'E:\Research\Project\Heat_simu\data\data3_gap\tensor_format_2interval\gap1.0',
+            r'./data/data3_gap/tensor_format_2interval/gap0.1',  # 数据所在的文件夹
+            r'./data/data3_gap/tensor_format_2interval/gap0.2',
+            r'./data/data3_gap/tensor_format_2interval/gap0.3',
+            r'./data/data3_gap/tensor_format_2interval/gap0.4',
+            r'./data/data3_gap/tensor_format_2interval/gap0.5',
+            r'./data/data3_gap/tensor_format_2interval/gap0.6',
+            r'./data/data3_gap/tensor_format_2interval/gap0.7',
+            r'./data/data3_gap/tensor_format_2interval/gap0.8',
+            r'./data/data3_gap/tensor_format_2interval/gap0.9',
+            r'./data/data3_gap/tensor_format_2interval/gap1.0',
         ],
         help="where data is",
     )
