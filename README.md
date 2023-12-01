@@ -36,6 +36,10 @@ pwd: ./source
 
 `python ./train/train.py -bf test --ep 200` 
 
+access to tensorboard
+
+`localhost:6006`
+
 ## 4. evaluation command
 
 pwd: ./source
