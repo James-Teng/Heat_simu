@@ -105,7 +105,7 @@ class DatasetFromFolder(Dataset):
         # load
         distribs = []
         for i in range(self.supervised_range + 1):
-            distribs.append(np.load(self.image_list[midx]))
+            distribs.append(np.load(self.image_list[midx+i]))
 
         # transforms 随机过程的顺序需要一致
         # set seed to make sure crop at same position
