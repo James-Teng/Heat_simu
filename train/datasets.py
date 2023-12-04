@@ -22,14 +22,10 @@ import matplotlib.pyplot as plt
 
 import utils
 
-
-# to do:
-# 是否需要将 input 的 transform 改成和 target 是一样的，然后再写一个 target to input 的 trans，这样循环过程会更一致一些
-
-region_casing_path = r'./data/data2_even/tensor_format/region_casing.npy'
-region_supervised_path = r'./data/data2_even/tensor_format/region_supervised.npy'
-region_data_path = r'./data/data2_even/tensor_format/region_data.npy'
-region_outer_path = r'./data/data2_even/tensor_format/region_outer.npy'
+region_casing_path = r'./data/region/region_casing.npy'
+region_supervised_path = r'./data/region/region_supervised.npy'
+region_data_path = r'./data/region/region_data.npy'
+region_outer_path = r'./data/region/region_outer.npy'
 
 
 class DatasetFromFolder(Dataset):
@@ -88,8 +84,9 @@ class DatasetFromFolder(Dataset):
 
     def __getitem__(self, idx):
         """
-        get distributions and mask
-        :return x, y, mask
+        get input distributions, supervised distributions and masks
+        when transforms applied, the output is tensor, otherwise is list of numpy array
+        :return in_distribs, out_distribs, mask
         """
 
         # index mapping
@@ -106,28 +103,31 @@ class DatasetFromFolder(Dataset):
         distribs = []
         for i in range(self.supervised_range + 1):
             distribs.append(np.load(self.image_list[midx+i]))
+        in_distribs = distribs[:-1]
+        out_distribs = distribs[1:]
+        del distribs
 
-        # transforms 随机过程的顺序需要一致
+        # the sequence of random process must be the same
         # set seed to make sure crop at same position
         seed = torch.random.seed()
 
         # transforms to input
-
-        # distribs[0] = np.stack(
-        #     [distribs[0], self.region_casing * self.gaps[choose_gap]], axis=2
-        # )  # 扩维拼接通道，加入了损伤后需要修改
-
         if self.transform_input:
-            torch.random.manual_seed(seed)
-            distribs[0] = self.transform_input(distribs[0])
-            torch.random.manual_seed(seed)
-            distribs[0] = distribs[0] * self.transform_region(self.region_data)
+            for i in range(len(in_distribs)):
+                torch.random.manual_seed(seed)
+                in_distribs[i] = self.transform_input(in_distribs[i])
+                torch.random.manual_seed(seed)
+                in_distribs[i] = in_distribs[i] * self.transform_region(self.region_data)  # mask input where is valid
+            # stack distributions
+            in_distribs = torch.stack(in_distribs, dim=0)
 
         # transforms to target
         if self.transform_target and self.supervised_range > 0:
-            for i in range(1, self.supervised_range + 1):
+            for i in range(len(out_distribs)):
                 torch.random.manual_seed(seed)
-                distribs[i] = self.transform_target(distribs[i])
+                out_distribs[i] = self.transform_target(out_distribs[i])
+            # stack distributions
+            out_distribs = torch.stack(out_distribs, dim=0)
 
         # transforms to region
         if self.transform_region:
@@ -145,7 +145,7 @@ class DatasetFromFolder(Dataset):
             region_data = self.region_data
             region_outer = self.region_outer
 
-        return distribs[0], distribs[1:], region_casing, region_supervised, region_data, region_outer
+        return in_distribs, out_distribs, region_casing, region_supervised, region_data, region_outer
 
     def __len__(self):
         """
@@ -208,25 +208,6 @@ if __name__ == '__main__':
 
     # ------ debugging ------ #
 
-    # # test for DatasetFromFolder
-    # td = DatasetFromFolder(
-    #     r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
-    #     supervised_range=1,
-    #     transform_input=utils.compose_input_transforms(),
-    #     transform_mask=utils.compose_mask_transforms(),
-    #     transform_target=utils.compose_target_transforms(),
-    # )
-    # print('dataset length: ', len(td))
-    # dis, mask = td[189]
-    #
-    # dis[1] = dis[1] * mask
-    #
-    # print(dis[1].max(), dis[1].min())
-    # plt.figure()
-    # plt.imshow(dis[1].numpy().transpose(1, 2, 0), vmin=-1, vmax=1, cmap='jet')
-    # plt.axis('off')
-    # plt.show()
-
     # test
     test_dataset = DatasetFromFolder(
         [
@@ -247,15 +228,14 @@ if __name__ == '__main__':
     )
 
     x, y, casing, supervised, data, outer = next(iter(test_dataloader))
-    # x[0][0] = x[0][0] * mask[0]
-    print(x[0])
-    print('target range', len(y))
+    print(x[0][0])
+    # print('target range', len(y))
     print('input shape', x.shape)
-    print('target shape', y[0].shape)
+    print('target shape', y.shape)
     print('casing shape', casing.shape)
     print('mask shape', supervised.shape)
     print('mask grad', supervised.requires_grad)
-    print('cat shape', cat_input(x, casing).shape)
+    print('cat shape', cat_input(x[:, 0, :, :, :], casing).shape)
 
     # # calculate mean and std
     # print(utils.get_stat(td, 1))
@@ -271,10 +251,7 @@ if __name__ == '__main__':
 
 
 
-
-
-
-    # # SimuheatDataset 使用实例
+    # # SimuheatDataset instance
     # dataset_dict = SimuHeatDataset(
     #     time_intervals=[
     #         '1000.0',
