@@ -69,7 +69,7 @@ class DatasetFromFolder(Dataset):
         lengths = [0]
         # 创建数据列表
         for data_list in image_list_paths:
-            # assert os.path.exists(data_folder), "Folder doesn't exist"
+            assert os.path.isfile(data_list), f"{data_list} is not a file"
             with open(data_list, 'r') as jsonfile:
                 tmp = json.load(jsonfile)
                 lengths.append(lengths[-1] + len(tmp))
@@ -227,36 +227,35 @@ if __name__ == '__main__':
     # plt.axis('off')
     # plt.show()
 
-    # # test
-    # test_dataset = DatasetFromFolder(
-    #     [
-    #         r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.1gap',
-    #         r'E:\Research\Project\Heat_simu\data\data2_even\tensor_format\0.1K_0.5gap',
-    #     ],
-    #     gaps=[0.1, 0.5],
-    #     supervised_range=4,
-    #     transform_input=utils.compose_input_transforms(),
-    #     transform_region=utils.compose_mask_transforms(),
-    #     transform_target=utils.compose_target_transforms(),
-    # )
-    # print('dataset length: ', len(test_dataset))
-    #
-    # test_dataloader = torch.utils.data.DataLoader(
-    #     test_dataset,
-    #     batch_size=5,
-    #     shuffle=True,
-    # )
-    #
-    # x, y, casing, supervised, data, outer = next(iter(test_dataloader))
-    # # x[0][0] = x[0][0] * mask[0]
-    # print(x[0])
-    # print('target range', len(y))
-    # print('input shape', x.shape)
-    # print('target shape', y[0].shape)
-    # print('casing shape', casing.shape)
-    # print('mask shape', supervised.shape)
-    # print('mask grad', supervised.requires_grad)
-    # print('cat shape', cat_input(x, casing).shape)
+    # test
+    test_dataset = DatasetFromFolder(
+        [
+            r'./data/data3_gap/tensor_format_2interval/gap0.1/data_list_interval_1000.0.json',
+        ],
+        gaps=[0.1],
+        supervised_range=4,
+        transform_input=utils.compose_input_transforms(),
+        transform_region=utils.compose_mask_transforms(),
+        transform_target=utils.compose_target_transforms(),
+    )
+    print('dataset length: ', len(test_dataset))
+
+    test_dataloader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=5,
+        shuffle=True,
+    )
+
+    x, y, casing, supervised, data, outer = next(iter(test_dataloader))
+    # x[0][0] = x[0][0] * mask[0]
+    print(x[0])
+    print('target range', len(y))
+    print('input shape', x.shape)
+    print('target shape', y[0].shape)
+    print('casing shape', casing.shape)
+    print('mask shape', supervised.shape)
+    print('mask grad', supervised.requires_grad)
+    print('cat shape', cat_input(x, casing).shape)
 
     # # calculate mean and std
     # print(utils.get_stat(td, 1))
@@ -266,29 +265,38 @@ if __name__ == '__main__':
     # plt.axis('off')
     # plt.show()
 
-    # SimuheatDataset 使用实例
-    dataset_dict = SimuHeatDataset(
-        time_intervals=[
-            '1000.0',
-            '10.0',
-            '0.1',
-        ],  # 指定时间间隔
-        roots=[
-            r'./data/data2_even/tensor_format/0.1K_0.1gap',  # 数据所在的文件夹
-            r'./data/data2_even/tensor_format/0.1K_0.3gap',
-            r'./data/data2_even/tensor_format/0.1K_0.5gap',
-        ],
-        gaps=[
-            0.1,
-            0.3,
-            0.5,
-        ],
-        supervised_range=1,
-        flip=True,
-        crop_size=None
-    )
 
-    print(dataset_dict)
-    print(len(dataset_dict['1000.0']))
-    print(len(dataset_dict['10.0']))
-    print(len(dataset_dict['0.1']))
+
+
+
+
+
+
+
+
+    # # SimuheatDataset 使用实例
+    # dataset_dict = SimuHeatDataset(
+    #     time_intervals=[
+    #         '1000.0',
+    #         '10.0',
+    #         '0.1',
+    #     ],  # 指定时间间隔
+    #     roots=[
+    #         r'./data/data2_even/tensor_format/0.1K_0.1gap',  # 数据所在的文件夹
+    #         r'./data/data2_even/tensor_format/0.1K_0.3gap',
+    #         r'./data/data2_even/tensor_format/0.1K_0.5gap',
+    #     ],
+    #     gaps=[
+    #         0.1,
+    #         0.3,
+    #         0.5,
+    #     ],
+    #     supervised_range=1,
+    #     flip=True,
+    #     crop_size=None
+    # )
+    #
+    # print(dataset_dict)
+    # print(len(dataset_dict['1000.0']))
+    # print(len(dataset_dict['10.0']))
+    # print(len(dataset_dict['0.1']))
