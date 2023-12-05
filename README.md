@@ -22,13 +22,15 @@ pytorch 1.13.1
 
 torchvision 0.14.1
 
-tensorboard 2.10.0
-
 numpy 1.23.0
 
 tqdm 4.65.0
 
 matplotlib 3.5.2
+
+tensorboard 2.10.0
+
+torchinfo
 
 ## 3. training command
 

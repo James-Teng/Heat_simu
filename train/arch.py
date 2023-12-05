@@ -11,7 +11,8 @@ from typing import Optional
 import torch
 from torch import nn
 
-from torchsummary import summary
+# from torchsummary import summary
+from torchinfo import summary
 
 
 class ConvolutionalBlock(nn.Module):
@@ -119,6 +120,83 @@ class ResidualBlock(nn.Module):
         return y + x
 
 
+class SimpleExtractor(nn.Module):
+    def __init__(
+            self,
+            in_channels: int = 2,
+            out_channels: int = 32,
+            kernel_size: int = 9,
+            activation: str = 'PReLU',
+    ):
+        super().__init__()
+        self.conv_block = ConvolutionalBlock(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            is_bn=False,
+            activation=activation,
+        )
+
+    def forward(self, x):
+        y = self.conv_block(x)
+        return y
+
+
+class SimpleBackbone(nn.Module):
+    def __init__(
+            self,
+            kernel_size: int = 3,
+            n_channels: int = 32,
+            n_blocks: int = 4,
+    ):
+        super().__init__()
+        self.residual_blocks = nn.Sequential(
+            *[
+                ResidualBlock(
+                    kernel_size=kernel_size,
+                    channels=n_channels,
+                    pre_activate=False,
+                    is_bn=True,
+                )
+                for i in range(n_blocks)
+            ]
+        )
+        self.conv_block = ConvolutionalBlock(
+            in_channels=n_channels,
+            out_channels=n_channels,
+            kernel_size=kernel_size,
+            is_bn=True,
+            activation=None,
+        )
+
+    def forward(self, x):
+        y = self.residual_blocks(x)
+        y = self.conv_block(y)
+        return y + x
+
+
+class SimpleRegressor(nn.Module):
+    def __init__(
+            self,
+            kernel_size: int = 9,
+            in_channels: int = 32,
+            out_channels: int = 1,
+            activation: str = 'tanh',
+    ):
+        super().__init__()
+        self.conv_block = ConvolutionalBlock(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            is_bn=False,
+            activation=activation,
+        )
+
+    def forward(self, x):
+        y = self.conv_block(x)
+        return y
+
+
 # todo 加入 dropout
 class SimpleArchR(nn.Module):
     """
@@ -136,7 +214,7 @@ class SimpleArchR(nn.Module):
     ):
         super().__init__()
 
-        # conv_k9n64s1 PReLU
+        # conv_k9n32s1 PReLU
         self.conv_block1 = ConvolutionalBlock(
             in_channels=in_channels,
             out_channels=n_channels,
@@ -158,7 +236,7 @@ class SimpleArchR(nn.Module):
             ]
         )
 
-        # conv_k3n64s1  bn  s1
+        # conv_k3n32s1  bn  s1
         self.conv_block2 = ConvolutionalBlock(
             in_channels=n_channels,
             out_channels=n_channels,
@@ -214,17 +292,52 @@ class NaiveRNNFramework(nn.Module):
 
         self.is_interval_output = True
 
-    def forward(self, x):
+    def forward(self, x, region_casing, region_supervised, region_data, region_outer):
         """
         forward
-        input x: (batch_size, time_step, feature_dim)
+        input x: (batch_size, time_step, channel, height, width)
         :param x: input is a sequence of heat distribution
         :return: sequence of heat distribution or final heat distribution
         """
-        outershell = torch.zeros()
+        output = []
+        distribution = x[:, 0, :, :, :]
+        print(distribution.shape)
+        # time_steps = x.shape[1]
+        for i in range(x.shape[1]):
 
+            # set outer distribution and cat channels
+            # todo 后续可以调制这里的输入，研究怎么表达热阻，也许可以在regressor中乘上mask一个热阻系数，让模型去调制升温的多少
+            distribution = distribution * region_supervised + x[:, i, :, :, :] * region_outer
+            input_x = torch.cat([distribution, region_casing], dim=1)
 
-        pass
+            # extract features
+            if i == 0:
+                features = self.extractor(input_x)
+            else:
+                features = self.extractor(input_x) + features  # todo 思考直接相加融合特征的合理性
+
+            # backbone
+            features = self.backbone(features)
+
+            # regression
+            distribution = self.regressor(features) * region_supervised
+
+            # interval and final output
+            if self.is_interval_output or i == x.shape[1] - 1:
+                output.append(distribution)
+
+            # out to in
+            if i < x.shape[1] - 1:
+                distribution = self.out2intrans(distribution)
+
+        print(output[0].shape)
+
+        if self.is_interval_output:
+            print(torch.stack(output, dim=1).shape)
+            return torch.stack(output, dim=1)
+        else:
+            print(output[-1].shape)
+            return output[-1]
 
     def enable_interval_output(self):
         """
@@ -246,24 +359,23 @@ if __name__ == '__main__':
     # test
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-
-    # # ConvolutionalBlock
-    # ta = ConvolutionalBlock(10, 20, 3, 1, 'relu', True, True)
-    # ta = ta.to(device)
-    # summary(ta, input_size=[(10, 96, 96)])
-
-    # # Residual Block
-    # ta = ResidualBlock(activation='relu', pre_activate=False)
-    # ta = ta.to(device)
-    # summary(ta, input_size=[(64, 24, 24)])
-    # # rand_tensor = torch.randn([1, 64, 24, 24]).to(device)
-    # # out = ta(rand_tensor)
-    # # l = torch.mean(out)
-    # # l.backward()
-
-    # SimpleArchR
-    ta = SimpleArchR()
+    # NaiveRNNFramework
+    ta = NaiveRNNFramework(
+        extractor=SimpleExtractor(),
+        backbone=SimpleBackbone(n_blocks=2),
+        regressor=SimpleRegressor(),
+        out2intrans=nn.Identity(),
+    )
+    ta.disable_interval_output()
     ta = ta.to(device)
-    summary(ta, input_size=[(1, 260, 130)])
 
+    # in_rand = torch.randn(5, 2, 1, 260, 130).to(device)
+    # mask_rand = torch.randn(5, 1, 260, 130).to(device)
+    # out = ta(in_rand, mask_rand, mask_rand, mask_rand, mask_rand)
+
+    summary(ta, input_size=[(2, 1, 260, 130), (1, 260, 130), (1, 260, 130), (1, 260, 130), (1, 260, 130)], batch_dim=0)
+
+    # simple_extractor = SimpleExtractor()
+    # simple_extractor = simple_extractor.to(device)
+    # summary(simple_extractor, input_size=(2, 260, 130), batch_dim=0)
 
