@@ -301,7 +301,6 @@ class NaiveRNNFramework(nn.Module):
         """
         output = []
         distribution = x[:, 0, :, :, :]
-        print(distribution.shape)
         # time_steps = x.shape[1]
         for i in range(x.shape[1]):
 
@@ -330,13 +329,9 @@ class NaiveRNNFramework(nn.Module):
             if i < x.shape[1] - 1:
                 distribution = self.out2intrans(distribution)
 
-        print(output[0].shape)
-
         if self.is_interval_output:
-            print(torch.stack(output, dim=1).shape)
             return torch.stack(output, dim=1)
         else:
-            print(output[-1].shape)
             return output[-1]
 
     def enable_interval_output(self):
