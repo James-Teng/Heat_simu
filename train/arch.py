@@ -185,6 +185,46 @@ class SimpleArchR(nn.Module):
         return output
 
 
+# framework
+class NaiveRNNFramework(nn.Module):
+    """
+    see framework.pptx in docs
+    """
+    def __init__(
+            self,
+            extractor: nn.Module,
+            regressor: nn.Module,
+            backbone: nn.Module,
+            out2intrans,
+            **kwargs
+    ):
+        """
+        initialization of NaiveRNNFramework
+        :param extractor: feature extractor
+        :param regressor: distribution regressor
+        :param backbone: backbone model
+        :param out2intrans: transforms from output to input
+        :param kwargs: passed to inner modules
+        """
+        super().__init__()
+        self.extractor = extractor
+        self.regressor = regressor
+        self.backbone = backbone
+        self.out2intrans = out2intrans
+
+    def forward(self, x, is_train: bool = True):
+        """
+        forward
+        input x: (batch_size, time_step, feature_dim)
+        :param x: input is a sequence of heat distribution
+        :param is_train: training mode -- output will be a sequence of heat distribution
+        :return: sequence of heat distribution or final heat distribution
+        """
+        outershell = torch.zeros()
+
+        pass
+
+
 if __name__ == '__main__':
 
     # test
