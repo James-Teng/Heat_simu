@@ -8,3 +8,4 @@
 /dataSources.local.xml
 /.idea/
 /train/z_exp.py
+/train/__pycache__/
