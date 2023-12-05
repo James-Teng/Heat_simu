@@ -48,8 +48,8 @@ pwd: ./source
 
 `python ./train/eval.py`
 
-set the checkpoint path in the `eval.py `source code
+set the checkpoint path in the `eval.py` source code
 
 
 
-`python ./train/k_step_eval.py -k 10 -c $CHECKPOINT_PATH`
+`python ./train/k_step_eval.py -k 10 -c $CHECKPOINT_WEIGHT_PATH`
