@@ -212,17 +212,33 @@ class NaiveRNNFramework(nn.Module):
         self.backbone = backbone
         self.out2intrans = out2intrans
 
-    def forward(self, x, is_train: bool = True):
+        self.is_interval_output = True
+
+    def forward(self, x):
         """
         forward
         input x: (batch_size, time_step, feature_dim)
         :param x: input is a sequence of heat distribution
-        :param is_train: training mode -- output will be a sequence of heat distribution
         :return: sequence of heat distribution or final heat distribution
         """
         outershell = torch.zeros()
 
+
         pass
+
+    def enable_interval_output(self):
+        """
+        enable interval output
+        :return:
+        """
+        self.is_interval_output = True
+
+    def disable_interval_output(self):
+        """
+        disable interval output
+        :return:
+        """
+        self.is_interval_output = False
 
 
 if __name__ == '__main__':
