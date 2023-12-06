@@ -154,7 +154,7 @@ class DatasetFromFolder(Dataset):
         return self.length
 
 
-# todo 是否需要这一层的封装？目前来说需要区分 是否为训练 是否裁切 是否旋转 监督范围
+# todo 换成类，继承自 datasetfromfolder，添加一些统计功能
 def SimuHeatDataset(
         roots: list[str],  # 需要包含的训练数据
         gaps: list[float],  # 上述数据其对应的 热阻
@@ -214,7 +214,7 @@ if __name__ == '__main__':
             r'./data/data3_gap/tensor_format_2interval/gap0.1/data_list_interval_1000.0.json',
         ],
         gaps=[0.1],
-        supervised_range=4,
+        supervised_range=2,
         transform_input=utils.compose_input_transforms(),
         transform_region=utils.compose_mask_transforms(),
         transform_target=utils.compose_target_transforms(),

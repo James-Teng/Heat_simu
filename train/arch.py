@@ -7,12 +7,13 @@
 import _init_cwd  # change cwd
 
 from typing import Optional
+import logging
 
 import torch
 from torch import nn
-
-# from torchsummary import summary
 from torchinfo import summary
+
+import utils
 
 
 class ConvolutionalBlock(nn.Module):
@@ -78,9 +79,7 @@ class ConvolutionalBlock(nn.Module):
         return y
 
 
-# todo 多步监督, 这个应该直接写到模型里面去
-# todo RNN + hourglass 结构
-# todo 单独使用一个卷积来得到最后的内壳温度分布
+# todo hourglass 结构
 class ResidualBlock(nn.Module):
     """
     不需要 down sample
@@ -175,6 +174,7 @@ class SimpleBackbone(nn.Module):
         return y + x
 
 
+# todo 单独使用一个卷积来得到最后的内壳温度分布
 class SimpleRegressor(nn.Module):
     def __init__(
             self,
@@ -290,6 +290,11 @@ class NaiveRNNFramework(nn.Module):
         self.backbone = backbone
         self.out2intrans = out2intrans
 
+        # self.region_casing = None
+        # self.region_supervised = None
+        # self.region_data = None
+        # self.region_outer = None
+
         self.is_interval_output = True
 
     def forward(self, x, region_casing, region_supervised, region_data, region_outer):
@@ -299,6 +304,11 @@ class NaiveRNNFramework(nn.Module):
         :param x: input is a sequence of heat distribution
         :return: sequence of heat distribution or final heat distribution
         """
+
+        # if no batch dim, add one
+        if len(x.shape) != 5:
+            x.unsqueeze_(dim=0)
+
         output = []
         distribution = x[:, 0, :, :, :]
         # time_steps = x.shape[1]
@@ -306,6 +316,9 @@ class NaiveRNNFramework(nn.Module):
 
             # set outer distribution and cat channels
             # todo 后续可以调制这里的输入，研究怎么表达热阻，也许可以在regressor中乘上mask一个热阻系数，让模型去调制升温的多少
+            logging.debug(f'distribution: {distribution.shape}')
+            logging.debug(f'region_supervised: {region_supervised.shape}')
+            logging.debug(f'region_outer: {region_outer.shape}')
             distribution = distribution * region_supervised + x[:, i, :, :, :] * region_outer
             input_x = torch.cat([distribution, region_casing], dim=1)
 
@@ -317,6 +330,7 @@ class NaiveRNNFramework(nn.Module):
 
             # backbone
             features = self.backbone(features)
+            logging.debug(f'features: {features.shape}')
 
             # regression
             distribution = self.regressor(features) * region_supervised
@@ -334,6 +348,12 @@ class NaiveRNNFramework(nn.Module):
         else:
             return output[-1]
 
+    # def set_region(self, region_casing, region_supervised, region_data, region_outer):
+    #     self.region_casing = region_casing
+    #     self.region_supervised = region_supervised
+    #     self.region_data = region_data
+    #     self.region_outer = region_outer
+
     def enable_interval_output(self):
         """
         enable interval output
@@ -349,7 +369,12 @@ class NaiveRNNFramework(nn.Module):
         self.is_interval_output = False
 
 
+# todo 模型配置器，配置表，参考human pose estimation
+# todo 模型初始化表，在其中可以加载 weight
+
 if __name__ == '__main__':
+
+    logging.basicConfig(level=logging.DEBUG)
 
     # test
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -357,18 +382,18 @@ if __name__ == '__main__':
     # NaiveRNNFramework
     ta = NaiveRNNFramework(
         extractor=SimpleExtractor(),
-        backbone=SimpleBackbone(n_blocks=2),
+        backbone=SimpleBackbone(n_blocks=1),
         regressor=SimpleRegressor(),
-        out2intrans=nn.Identity(),
+        out2intrans=utils.compose_target2input_transforms()
     )
-    ta.disable_interval_output()
+    ta.enable_interval_output()
     ta = ta.to(device)
 
     # in_rand = torch.randn(5, 2, 1, 260, 130).to(device)
     # mask_rand = torch.randn(5, 1, 260, 130).to(device)
     # out = ta(in_rand, mask_rand, mask_rand, mask_rand, mask_rand)
 
-    summary(ta, input_size=[(2, 1, 260, 130), (1, 260, 130), (1, 260, 130), (1, 260, 130), (1, 260, 130)], batch_dim=0)
+    summary(ta, input_size=[(5, 2, 1, 260, 130), (5, 1, 260, 130), (5, 1, 260, 130), (5, 1, 260, 130), (5, 1, 260, 130)])
 
     # simple_extractor = SimpleExtractor()
     # simple_extractor = simple_extractor.to(device)
