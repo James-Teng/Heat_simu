@@ -1,4 +1,4 @@
-# Simu Heat
+# Heat Simu
 
 Explosive heat distribution simulation
 
