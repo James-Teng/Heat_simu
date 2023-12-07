@@ -70,7 +70,7 @@ def write_config(config, config_path):
 
 def read_config(config_path):
     """
-    load config
+    load config, if not found, exit
     """
     try:
         with open(config_path, 'r') as jsonfile:

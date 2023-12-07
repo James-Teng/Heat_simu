@@ -3,6 +3,7 @@
 # @Time    : 2023.9.20 14:27
 # @Author  : James.T
 # @File    : datasets.py
+import logging
 
 import _init_cwd  # change cwd
 
@@ -103,6 +104,8 @@ class DatasetFromFolder(Dataset):
         distribs = []
         for i in range(self.supervised_range + 1):
             distribs.append(np.load(self.image_list[midx+i]))
+            logging.debug(f'{self.image_list[midx+i]} loaded')
+        logging.debug(f'load {self.supervised_range + 1} distributions')
         in_distribs = distribs[:-1]
         out_distribs = distribs[1:]
         del distribs
@@ -125,7 +128,7 @@ class DatasetFromFolder(Dataset):
         if self.transform_target and self.supervised_range > 0:
             for i in range(len(out_distribs)):
                 torch.random.manual_seed(seed)
-                out_distribs[i] = self.transform_target(out_distribs[i])
+                out_distribs[i] = self.transform_target(out_distribs[i])  # todo 是否需要在这里给 y 添加 mask
             # stack distributions
             out_distribs = torch.stack(out_distribs, dim=0)
 
@@ -208,13 +211,14 @@ if __name__ == '__main__':
 
     # ------ debugging ------ #
 
+    logging.basicConfig(level=logging.WARNING)
     # test
     test_dataset = DatasetFromFolder(
         [
             r'./data/data3_gap/tensor_format_2interval/gap0.1/data_list_interval_1000.0.json',
         ],
         gaps=[0.1],
-        supervised_range=2,
+        supervised_range=10,
         transform_input=utils.compose_input_transforms(),
         transform_region=utils.compose_mask_transforms(),
         transform_target=utils.compose_target_transforms(),
@@ -228,7 +232,8 @@ if __name__ == '__main__':
     )
 
     x, y, casing, supervised, data, outer = next(iter(test_dataloader))
-    print(x[0][0])
+    for d in x[0]:
+        print(d)
     # print('target range', len(y))
     print('input shape', x.shape)
     print('target shape', y.shape)

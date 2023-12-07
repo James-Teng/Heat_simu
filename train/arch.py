@@ -319,6 +319,7 @@ class NaiveRNNFramework(nn.Module):
             logging.debug(f'distribution: {distribution.shape}')
             logging.debug(f'region_supervised: {region_supervised.shape}')
             logging.debug(f'region_outer: {region_outer.shape}')
+            logging.debug(f'distribution requires grad: {distribution.requires_grad}')
             distribution = distribution * region_supervised + x[:, i, :, :, :] * region_outer
             input_x = torch.cat([distribution, region_casing], dim=1)
 

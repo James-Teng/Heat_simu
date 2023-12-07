@@ -106,7 +106,7 @@ if __name__ == '__main__':
     parser.add_argument("--lr_milestones", "-ms", nargs='+', type=int, default=[], help="lr milestones eg: 1 2 3")
 
     parser.add_argument("--n_gpu", "-gpu", type=int, default=1, help="number of gpu")
-    parser.add_argument("--worker", "-wk", type=int, default=0, help="dataloader worker")
+    parser.add_argument("--worker", "-wk", type=int, default=10, help="dataloader worker")
 
     parser.add_argument("--resume", "-r", type=str, default=None, help="the path of previous training")
     parser.add_argument("--debug", "-d", action="store_true", help="debug mode")
@@ -206,6 +206,7 @@ if __name__ == '__main__':
         backbone=arch.SimpleBackbone(
             n_blocks=n_blocks,
             n_channels=n_channels,
+            kernel_size=small_kernel_size,
         ),
         regressor=arch.SimpleRegressor(
             kernel_size=large_kernel_size,
@@ -325,7 +326,7 @@ if __name__ == '__main__':
             os.path.join(record_path, f'epoch_{epoch}_gt.png'),
         )
         utils.plt_save_image(
-            predict[0, -1, 0, :, :].cpu().detach().numpy(),
+            predict[0, -1, 0, :, :].detach().cpu().numpy(),
             supervised[0, 0, :, :].cpu().numpy(),
             os.path.join(record_path, f'epoch_{epoch}_p.png'),
         )
