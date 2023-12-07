@@ -38,6 +38,8 @@ pwd: ./source
 
 `python ./train/train.py -bf test --ep 200` 
 
+`python ./train/train.py -bf k_5 -k 5 -bs 8 -ep 100`
+
 access to tensorboard
 
 `localhost:6006`
