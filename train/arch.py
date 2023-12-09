@@ -126,13 +126,14 @@ class SimpleExtractor(nn.Module):
             out_channels: int = 32,
             kernel_size: int = 9,
             activation: str = 'PReLU',
+            is_bn: bool = False,
     ):
         super().__init__()
         self.conv_block = ConvolutionalBlock(
             in_channels=in_channels,
             out_channels=out_channels,
             kernel_size=kernel_size,
-            is_bn=False,
+            is_bn=is_bn,
             activation=activation,
         )
 
@@ -147,6 +148,7 @@ class SimpleBackbone(nn.Module):
             kernel_size: int = 3,
             n_channels: int = 32,
             n_blocks: int = 4,
+            is_bn: bool = True,
     ):
         super().__init__()
         self.residual_blocks = nn.Sequential(
@@ -155,7 +157,7 @@ class SimpleBackbone(nn.Module):
                     kernel_size=kernel_size,
                     channels=n_channels,
                     pre_activate=False,
-                    is_bn=True,
+                    is_bn=is_bn,
                 )
                 for i in range(n_blocks)
             ]
@@ -164,7 +166,7 @@ class SimpleBackbone(nn.Module):
             in_channels=n_channels,
             out_channels=n_channels,
             kernel_size=kernel_size,
-            is_bn=True,
+            is_bn=is_bn,
             activation=None,
         )
 
@@ -199,9 +201,6 @@ class SimpleRegressor(nn.Module):
 
 # todo 加入 dropout
 class SimpleArchR(nn.Module):
-    """
-
-    """
     def __init__(
             self,
             large_kernel_size: int = 9,
