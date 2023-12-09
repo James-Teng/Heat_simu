@@ -133,7 +133,7 @@ class SimpleExtractor(nn.Module):
             in_channels=in_channels,
             out_channels=out_channels,
             kernel_size=kernel_size,
-            is_bn=is_bn,
+            is_bn=False,
             activation=activation,
         )
 
