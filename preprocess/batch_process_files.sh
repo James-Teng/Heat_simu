@@ -2,7 +2,7 @@
 
 # 指定文件夹路径和要执行的 Python 脚本路径
 folder_path="../data/data3_gap/2interval"
-py_script_path="./preprocess/all_txt_to_tenor.py"
+py_script_path="./preprocess/all_txt_to_tensor.py"
 
 # 遍历文件夹中的所有文件
 for file_path in "$folder_path"/*; do
