@@ -1,10 +1,10 @@
-import _init_cwd  # change cwd
+import pp
 
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-path = r'./data/data2_even/tensor_format' 
+path = pp.abs_path('data/data2_even/tensor_format')
 distrib = np.load(os.path.join(path, '102_make_mask.npy'))
 
 plt.figure()

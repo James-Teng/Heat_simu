@@ -4,7 +4,7 @@
 # @Author  : James.T
 # @File    : single_frame_txt_to_tensor.py
 
-import _init_cwd  # change cwd
+import pp
 
 import os
 import sys
@@ -13,7 +13,7 @@ import numpy as np
 import torch
 
 
-data_path = r'./data/data2_even/txt_format/0.1K_0.1gap.txt'
+data_path = pp.abs_path('data/data2_even/txt_format/0.1K_0.1gap.txt')
 
 frame = 0  # index from 0 to max - 1
 max_T = 400  # 摄氏度

@@ -4,7 +4,7 @@
 # @Author  : James.T
 # @File    : all_txt_to_tensor.py
 
-import _init_cwd  # change cwd
+import pp  # change cwd
 
 import os
 import argparse
@@ -18,6 +18,7 @@ import numpy as np
 logging.basicConfig(level=logging.WARNING)
 
 # todo 保存更多的数据信息
+# todo 分开产生数据列表的功能
 
 if __name__ == '__main__':
 
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     data_path = args.path
-    output_parent_path = r'./data/data3_gap/tensor_format_2interval'
+    output_parent_path = pp.abs_path('data/data3_gap/tensor_format_2interval')
 
     with open(data_path, 'r', encoding='utf-8') as f:
 
