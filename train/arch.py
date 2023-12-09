@@ -4,7 +4,7 @@
 # @Author  : James.T
 # @File    : arch.py
 
-import _init_cwd  # change cwd
+import pp  # change cwd
 
 from typing import Optional
 import logging

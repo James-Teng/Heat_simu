@@ -5,7 +5,7 @@
 # @File    : datasets.py
 import logging
 
-import _init_cwd  # change cwd
+import pp  # change cwd
 
 import os
 import json
@@ -23,10 +23,10 @@ import matplotlib.pyplot as plt
 
 import utils
 
-region_casing_path = r'./data/region/region_casing.npy'
-region_supervised_path = r'./data/region/region_supervised.npy'
-region_data_path = r'./data/region/region_data.npy'
-region_outer_path = r'./data/region/region_outer.npy'
+region_casing_path = pp.abs_path('data/region/region_casing.npy')
+region_supervised_path = pp.abs_path('data/region/region_supervised.npy')
+region_data_path = pp.abs_path('data/region/region_data.npy')
+region_outer_path = pp.abs_path('data/region/region_outer.npy')
 
 
 class DatasetFromFolder(Dataset):
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     # test
     test_dataset = DatasetFromFolder(
         [
-            r'./data/data3_gap/tensor_format_2interval/gap0.1/data_list_interval_1000.0.json',
+            pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.1/data_list_interval_1000.0.json'),
         ],
         gaps=[0.1],
         supervised_range=10,

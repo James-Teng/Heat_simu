@@ -1,4 +1,4 @@
-# todo 保存参数来源，在什么数据集上测试的
+# 这个文件没有维护了，不要用了
 
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -6,7 +6,7 @@
 # @Author  : James.T
 # @File    : eval.py
 
-import _init_cwd  # change cwd
+import pp  # change cwd
 
 import sys
 import os

@@ -4,7 +4,7 @@
 # @Author  : James.T
 # @File    : train.py
 
-import _init_cwd  # change cwd
+import pp  # change cwd
 
 import sys
 import os
@@ -32,7 +32,7 @@ import logging
 if __name__ == '__main__':
 
     is_record_iter = False
-    train_save_path = r'./training_record'
+    train_save_path = pp.abs_path('training_record')
 
     # --------------------------------------------------------------------
     #  config
@@ -58,16 +58,16 @@ if __name__ == '__main__':
     parser.add_argument(
         "--data_roots", "-dr", nargs='+', type=str,
         default=[
-            r'./data/data3_gap/tensor_format_2interval/gap0.1',  # 数据所在的文件夹
-            r'./data/data3_gap/tensor_format_2interval/gap0.2',
-            r'./data/data3_gap/tensor_format_2interval/gap0.3',
-            r'./data/data3_gap/tensor_format_2interval/gap0.4',
-            r'./data/data3_gap/tensor_format_2interval/gap0.5',
-            r'./data/data3_gap/tensor_format_2interval/gap0.6',
-            # r'./data/data3_gap/tensor_format_2interval/gap0.7',
-            r'./data/data3_gap/tensor_format_2interval/gap0.8',
-            r'./data/data3_gap/tensor_format_2interval/gap0.9',
-            r'./data/data3_gap/tensor_format_2interval/gap1.0',
+            pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.1'),  # 数据所在的文件夹
+            pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.2'),
+            pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.3'),
+            pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.4'),
+            pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.5'),
+            pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.6'),
+            pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.7'),
+            pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.8'),
+            pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.9'),
+            pp.abs_path('data/data3_gap/tensor_format_2interval/gap1.0'),
         ],
         help="where data is",
     )
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     parser.add_argument("--large_kernel_size", "-lk", type=int, default=9, help="large conv kernel size")
     parser.add_argument("--small_kernel_size", "-sk", type=int, default=3, help="small conv kernel size")
     parser.add_argument("--in_channels", "-ic", type=int, default=2, help="input channels")  # 没有使用
-    parser.add_argument("--channels", "-ch", type=int, default=32, help="conv channels")
+    parser.add_argument("--n_channels", "-ch", type=int, default=32, help="conv channels")
     parser.add_argument("--blocks", "-bk", type=int, default=4, help="the number of residual blocks")
     parser.add_argument("--bn", action="store_true", help="batch normalization")
     parser.add_argument("--initial_weight", "-iw", type=str, default=None, help="path of initial weights")
@@ -114,6 +114,8 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
 
     logging.basicConfig(level=logging.DEBUG if args['debug'] else logging.WARNING)
+
+    # todo 增加命令行参数检测
 
     # # resume
     resume = args['resume']
@@ -181,13 +183,13 @@ if __name__ == '__main__':
         ),
         backbone=arch.SimpleBackbone(
             n_blocks=args['blocks'],
-            n_channels=args['channels'],
+            n_channels=args['n_channels'],
             kernel_size=args['small_kernel_size'],
             is_bn=args['bn'],
         ),
         regressor=arch.SimpleRegressor(
             kernel_size=args['large_kernel_size'],
-            in_channels=args['channels'],
+            in_channels=args['n_channels'],
             out_channels=1,
         ),
         out2intrans=utils.compose_target2input_transforms()

@@ -7,7 +7,7 @@
 # @Author  : James.T
 # @File    : eval.py
 
-import _init_cwd  # change cwd
+import pp  # change cwd
 
 import sys
 import os
@@ -33,7 +33,7 @@ import training_manage
 # todo 适配 train config
 if __name__ == '__main__':
 
-    eval_save_path = r'./eval_record'
+    eval_save_path = pp.abs_path('eval_record')
 
     parser = argparse.ArgumentParser(description='k step eval')
     parser.add_argument("-k", type=int, default=10, help="k steps forward", required=True)
@@ -54,16 +54,16 @@ if __name__ == '__main__':
     )
 
     data_roots = [
-        r'./data/data3_gap/tensor_format_2interval/gap0.1',  # 数据所在的文件夹
-        # r'./data/data3_gap/tensor_format_2interval/gap0.2',
-        # r'./data/data3_gap/tensor_format_2interval/gap0.3',
-        # r'./data/data3_gap/tensor_format_2interval/gap0.4',
-        # r'./data/data3_gap/tensor_format_2interval/gap0.5',
-        # r'./data/data3_gap/tensor_format_2interval/gap0.6',
-        # r'./data/data3_gap/tensor_format_2interval/gap0.7',
-        # r'./data/data3_gap/tensor_format_2interval/gap0.8',
-        # r'./data/data3_gap/tensor_format_2interval/gap0.9',
-        # r'./data/data3_gap/tensor_format_2interval/gap1.0',
+        pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.1'),  # 数据所在的文件夹
+        # pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.2'),
+        # pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.3'),
+        # pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.4'),
+        # pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.5'),
+        # pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.6'),
+        # pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.7'),
+        # pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.8'),
+        # pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.9'),
+        # pp.abs_path('data/data3_gap/tensor_format_2interval/gap1.0'),
     ]
 
     gaps = [
@@ -103,17 +103,17 @@ if __name__ == '__main__':
     model = arch.NaiveRNNFramework(
         extractor=arch.SimpleExtractor(
             in_channels=config['in_channels'],
-            out_channels=config['channels'],
+            out_channels=config['n_channels'],
             kernel_size=config['large_kernel_size'],
         ),
         backbone=arch.SimpleBackbone(
             n_blocks=config['blocks'],
-            n_channels=config['channels'],
+            n_channels=config['n_channels'],
             kernel_size=config['small_kernel_size'],
         ),
         regressor=arch.SimpleRegressor(
             kernel_size=config['large_kernel_size'],
-            in_channels=config['channels'],
+            in_n_=config['channels'],
             out_channels=1,
         ),
         out2intrans=utils.compose_target2input_transforms()
