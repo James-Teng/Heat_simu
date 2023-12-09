@@ -66,7 +66,8 @@ class DatasetFromFolder(Dataset):
         lengths = [0]
         # 创建数据列表
         for data_list in image_list_paths:
-            assert os.path.isfile(data_list), f"{data_list} is not a file"
+            assert os.path.isfile(data_list) and data_list.endswith('.json'), \
+                f"{self.__class__.__name__}: \'{data_list}\' is not a JSON file"
             with open(data_list, 'r') as jsonfile:
                 tmp = json.load(jsonfile)
                 lengths.append(lengths[-1] + len(tmp))
@@ -249,36 +250,3 @@ if __name__ == '__main__':
     # plt.imshow(dis[1].numpy().transpose(1, 2, 0), vmin=-1, vmax=1, cmap='jet')
     # plt.axis('off')
     # plt.show()
-
-
-
-
-
-
-
-    # # SimuheatDataset instance
-    # dataset_dict = SimuHeatDataset(
-    #     time_intervals=[
-    #         '1000.0',
-    #         '10.0',
-    #         '0.1',
-    #     ],  # 指定时间间隔
-    #     roots=[
-    #         r'./data/data2_even/tensor_format/0.1K_0.1gap',  # 数据所在的文件夹
-    #         r'./data/data2_even/tensor_format/0.1K_0.3gap',
-    #         r'./data/data2_even/tensor_format/0.1K_0.5gap',
-    #     ],
-    #     gaps=[
-    #         0.1,
-    #         0.3,
-    #         0.5,
-    #     ],
-    #     supervised_range=1,
-    #     flip=True,
-    #     crop_size=None
-    # )
-    #
-    # print(dataset_dict)
-    # print(len(dataset_dict['1000.0']))
-    # print(len(dataset_dict['10.0']))
-    # print(len(dataset_dict['0.1']))

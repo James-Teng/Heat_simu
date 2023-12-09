@@ -36,8 +36,8 @@ if __name__ == '__main__':
     eval_save_path = r'./eval_record'
 
     parser = argparse.ArgumentParser(description='k step eval')
-    parser.add_argument("-k", type=int, default=10, help="k steps forward")
-    parser.add_argument("--path", '-p', type=str, default=None, help="task path")
+    parser.add_argument("-k", type=int, default=10, help="k steps forward", required=True)
+    parser.add_argument("--path", '-p', type=str, default=None, help="task path", required=True)
     parser.add_argument("--debug", '-d', action='store_true', help="debug mode")
     args = vars(parser.parse_args())
     logging.basicConfig(level=logging.DEBUG if args['debug'] else logging.WARNING)
@@ -126,7 +126,7 @@ if __name__ == '__main__':
         checkpoint = torch.load(checkpoint_path)
 
         # load model weights
-        model.load_state_dict(checkpoint['model'])
+        model.load_state_dict(checkpoint['model'])  # todo 统计加载率
     else:
         raise FileNotFoundError(f'No checkpoint found at \'{checkpoint_path}\'')
 
@@ -155,11 +155,9 @@ if __name__ == '__main__':
     with open(record_info_path, 'x') as f:
         f.write(f'-- {k} steps eval --\n')
         f.write(f'model path: {checkpoint_path}\n')
-        time_intervals = config['time_intervals']
         f.write(f'datasets: {data_roots}\n')
-        f.write(f'time interval: {time_intervals}\n')
+        f.write(f"time interval: {config['time_intervals']}\n")
         f.write(f'eval time: {comment}\n')
-        del data_roots, time_intervals
 
     # --------------------------------------------------------------------
     #  evaluation

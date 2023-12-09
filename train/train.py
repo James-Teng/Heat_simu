@@ -46,7 +46,7 @@ if __name__ == '__main__':
     parser.add_argument("--crop_size", "-cp", type=int, default=None, help="crop size when training")
     parser.add_argument("--k_steps_supervised", "-k", type=int, default=1, help="supervised steps")
     parser.add_argument("--flip", type=bool, default=True, help="flip")
-    parser.add_argument(
+    parser.add_argument(  # todo 修改数据集关于时间间隔的加载
         "--time_intervals", "-ti", nargs='+', type=str,  # choices=['1000.0', '10.0', '0.1'],
         default=[
             # '1000.0',
@@ -96,10 +96,11 @@ if __name__ == '__main__':
     parser.add_argument("--in_channels", "-ic", type=int, default=2, help="input channels")  # 没有使用
     parser.add_argument("--channels", "-ch", type=int, default=32, help="conv channels")
     parser.add_argument("--blocks", "-bk", type=int, default=4, help="the number of residual blocks")
+    parser.add_argument("--bn", action="store_true", help="batch normalization")
     parser.add_argument("--initial_weight", "-iw", type=str, default=None, help="path of initial weights")
 
     # training strategy
-    parser.add_argument("--epoch", "-ep", type=int, default=100, help="total epochs to train")
+    parser.add_argument("--epochs", "-ep", type=int, default=100, help="total epochs to train")
     parser.add_argument("--batch_size", "-bs", type=int, default=24, help="batch size")
     parser.add_argument("--lr_initial", "-lr", type=float, default=1e-4, help="learning rate")
     parser.add_argument("--lr_decay_gamma", "-lr_dg", type=float, default=1, help="learning rate decay gamma")
@@ -142,32 +143,6 @@ if __name__ == '__main__':
     print('\n{:-^52}\n'.format(' TASK CONFIG '))
     print(json.dumps(args, indent='\t'))
 
-    # todo 考虑是否有必要存在变量里
-    # here to load config
-    time_intervals = args['time_intervals']
-    roots = args['data_roots']
-    gaps = args['gaps']
-    crop_size = args['crop_size']
-    flip = args['flip']
-    supervised_range = args['k_steps_supervised']
-
-    model_type = args['model_type']
-    large_kernel_size = args['large_kernel_size']
-    small_kernel_size = args['small_kernel_size']
-    in_channels = args['in_channels']
-    n_channels = args['channels']
-    n_blocks = args['blocks']
-    initial_weight = args['initial_weight']
-
-    total_epochs = args['epoch']
-    batch_size = args['batch_size']
-    lr = args['lr_initial']
-    lr_decay_gamma = args['lr_decay_gamma']
-    lr_milestone = args['lr_milestones']
-
-    n_gpu = args['n_gpu']
-    worker = args['worker']
-
     # 存储配置
     if not resume:
         training_manage.write_config(args, config_path)
@@ -197,20 +172,22 @@ if __name__ == '__main__':
     #     n_channels=n_channels,
     #     n_blocks=n_blocks,
     # )
-    model = arch.NaiveRNNFramework(
+    model = arch.__dict__[args['model_type']](
         extractor=arch.SimpleExtractor(
-            in_channels=in_channels,
-            out_channels=n_channels,
-            kernel_size=large_kernel_size,
+            in_channels=args['in_channels'],
+            out_channels=args['n_channels'],
+            kernel_size=args['large_kernel_size'],
+            is_bn=args['bn'],
         ),
         backbone=arch.SimpleBackbone(
-            n_blocks=n_blocks,
-            n_channels=n_channels,
-            kernel_size=small_kernel_size,
+            n_blocks=args['blocks'],
+            n_channels=args['channels'],
+            kernel_size=args['small_kernel_size'],
+            is_bn=args['bn'],
         ),
         regressor=arch.SimpleRegressor(
-            kernel_size=large_kernel_size,
-            in_channels=n_channels,
+            kernel_size=args['large_kernel_size'],
+            in_channels=args['channels'],
             out_channels=1,
         ),
         out2intrans=utils.compose_target2input_transforms()
@@ -238,32 +215,32 @@ if __name__ == '__main__':
     criterion = nn.MSELoss().to(device)
 
     # optimizer
-    optimizer = torch.optim.Adam(params=model.parameters(), lr=lr)  # 可以过滤需要梯度的权重
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=args['lr_initial'])  # 可以过滤需要梯度的权重
 
     # load optimizer
     if resume:
         optimizer.load_state_dict(checkpoint['optimizer'])
 
     # n gpu
-    is_multi_gpu = torch.cuda.is_available() and n_gpu > 1
+    is_multi_gpu = torch.cuda.is_available() and args['n_gpu'] > 1
     if is_multi_gpu:
-        model = nn.DataParallel(model, device_ids=list(range(n_gpu)))  # 之后的项目应该用 nn.DistributedDataParallel
+        model = nn.DataParallel(model, device_ids=list(range(args['n_gpu'])))  # 之后的项目应该用 nn.DistributedDataParallel
 
     # datasets
     datasets_dict = datasets.SimuHeatDataset(
-        time_intervals=time_intervals,
-        roots=roots,
-        gaps=gaps,
-        supervised_range=supervised_range,
-        flip=flip,
-        crop_size=crop_size,
+        time_intervals=args['time_intervals'],
+        roots=args['data_roots'],
+        gaps=args['gaps'],
+        supervised_range=args['k_steps_supervised'],
+        flip=args['flip'],
+        crop_size=args['crop_size'],
     )
 
     train_dataloader = torch.utils.data.DataLoader(
-        datasets_dict[time_intervals[0]],
-        batch_size=batch_size,
+        datasets_dict[args['time_intervals'][0]],
+        batch_size=args['batch_size'],
         shuffle=True,
-        num_workers=worker,
+        num_workers=args['worker'],
         pin_memory=True,
     )
 
@@ -283,7 +260,7 @@ if __name__ == '__main__':
     tb.configure(argv=[None, '--logdir', record_path])
     url = tb.launch()
 
-    total_bar = tqdm(range(start_epoch, total_epochs), desc='[Total Progress]')
+    total_bar = tqdm(range(start_epoch, args['epochs']), desc='[Total Progress]')
     for epoch in total_bar:
 
         model.train()
@@ -349,9 +326,9 @@ if __name__ == '__main__':
         )
 
     # save loss file
-    loss_epochs_list.save_to_file(os.path.join(record_path, f'epoch_loss_{start_epoch}_{total_epochs-1}.npy'))
+    loss_epochs_list.save_to_file(os.path.join(record_path, f"epoch_loss_{start_epoch}_{args['epochs']-1}.npy"))
     if is_record_iter:
-        loss_iters_list.save_to_file(os.path.join(record_path, f'iter_loss_{start_epoch}_{total_epochs-1}.npy'))
+        loss_iters_list.save_to_file(os.path.join(record_path, f"iter_loss_{start_epoch}_{args['epochs']-1}.npy"))
 
     writer.close()
 
