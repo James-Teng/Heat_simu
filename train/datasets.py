@@ -181,6 +181,8 @@ def SimuHeatDataset(
         the configured dataset
     """
 
+    assert len(roots) == len(gaps), "the length of roots and gaps must be the same"
+
     # transforms
     input_trans, mask_trans, target_trans = utils.compose_transforms(crop=crop_size, flip=flip)
 

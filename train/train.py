@@ -64,7 +64,7 @@ if __name__ == '__main__':
             pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.4'),
             pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.5'),
             pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.6'),
-            pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.7'),
+            # pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.7'),
             pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.8'),
             pp.abs_path('data/data3_gap/tensor_format_2interval/gap0.9'),
             pp.abs_path('data/data3_gap/tensor_format_2interval/gap1.0'),

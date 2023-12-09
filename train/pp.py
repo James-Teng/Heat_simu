@@ -14,8 +14,7 @@ while os.path.basename(_cur_dir) != _project_dirname:
     assert _loop_cnt <= 5, "check if you are running in Project folder"
 
 project_root = _cur_dir
-logging.debug(f'project root: {project_root}')
 
 
 def abs_path(path_in_project):
-    return os.path.join(project_root, path_in_project)
+    return os.path.normpath(os.path.join(project_root, path_in_project))
