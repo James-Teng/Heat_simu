@@ -54,4 +54,4 @@ access to tensorboard
 
 `cd ./source`
 
-`python ./train/k_step_eval.py -k 10 -c $CHECKPOINT_WEIGHT_PATH`
+`python ./train/k_step_eval.py -k 10 -p $CHECKPOINT_WEIGHT_PATH`
