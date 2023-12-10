@@ -15,6 +15,7 @@ from torchinfo import summary
 
 import utils
 
+# todo 加载权重检查
 
 class ConvolutionalBlock(nn.Module):
     """
@@ -369,8 +370,63 @@ class NaiveRNNFramework(nn.Module):
         self.is_interval_output = False
 
 
+def model_factory(config):
+    """
+    model factory
+    :param config: config dict
+    :return: model
+    """
+    # todo 是否有多余的参数
+    keys = [
+        'model_type', 'in_channels', 'n_channels',
+        'large_kernel_size', 'small_kernel_size',
+        'blocks', 'bn'
+    ]
+
+    neccessary_config = {key: config[key] for key in keys}
+
+    if neccessary_config['model_type'] == 'SimpleArchR':
+        needed_keys = ['large_kernel_size', 'small_kernel_size', 'n_channels', 'blocks', 'in_channels']
+        assert all([neccessary_config[key] is not None for key in needed_keys]), \
+            f'missing keys for {neccessary_config["model_type"]}'
+        return SimpleArchR(
+            large_kernel_size=config['large_kernel_size'],
+            small_kernel_size=config['small_kernel_size'],
+            in_channels=config['in_channels'],
+            n_channels=config['n_channels'],
+            n_blocks=config['blocks'],
+        )
+
+    elif neccessary_config['model_type'] == 'NaiveRNNFramework':
+        needed_keys = ['large_kernel_size', 'small_kernel_size', 'n_channels', 'blocks', 'in_channels', 'bn']
+        assert all([neccessary_config[key] is not None for key in needed_keys]), \
+            f'missing keys for {neccessary_config["model_type"]}'
+        return NaiveRNNFramework(
+            extractor=SimpleExtractor(
+                in_channels=neccessary_config['in_channels'],
+                out_channels=neccessary_config['n_channels'],
+                kernel_size=neccessary_config['large_kernel_size'],
+            ),
+            backbone=SimpleBackbone(
+                n_blocks=neccessary_config['blocks'],
+                n_channels=neccessary_config['n_channels'],
+                kernel_size=neccessary_config['small_kernel_size'],
+                is_bn=neccessary_config['bn'],
+            ),
+            regressor=SimpleRegressor(
+                kernel_size=neccessary_config['large_kernel_size'],
+                in_channels=neccessary_config['n_channels'],
+                out_channels=1,
+            ),
+            out2intrans=utils.compose_target2input_transforms()
+        )
+
+    else:
+        raise ValueError(f'unsupported model type: \'{neccessary_config["model_type"]}\'')
+
 # todo 模型配置器，配置表，参考human pose estimation
 # todo 模型初始化表，在其中可以加载 weight
+
 
 if __name__ == '__main__':
 

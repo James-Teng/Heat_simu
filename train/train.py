@@ -145,7 +145,7 @@ if __name__ == '__main__':
     print('\n{:-^52}\n'.format(' TASK CONFIG '))
     print(json.dumps(args, indent='\t'))
 
-    # 存储配置
+    # save config
     if not resume:
         training_manage.write_config(args, config_path)
 
@@ -165,35 +165,8 @@ if __name__ == '__main__':
 
     start_time = time.time()
 
-    # define model #
-    # todo 思考怎么实现模型配置接口统一
-    # model = arch.__dict__[model_type](
-    #     large_kernel_size=large_kernel_size,
-    #     small_kernel_size=small_kernel_size,
-    #     in_channels=in_channels,
-    #     n_channels=n_channels,
-    #     n_blocks=n_blocks,
-    # )
-    model = arch.__dict__[args['model_type']](
-        extractor=arch.SimpleExtractor(
-            in_channels=args['in_channels'],
-            out_channels=args['n_channels'],
-            kernel_size=args['large_kernel_size'],
-            is_bn=args['bn'],
-        ),
-        backbone=arch.SimpleBackbone(
-            n_blocks=args['blocks'],
-            n_channels=args['n_channels'],
-            kernel_size=args['small_kernel_size'],
-            is_bn=args['bn'],
-        ),
-        regressor=arch.SimpleRegressor(
-            kernel_size=args['large_kernel_size'],
-            in_channels=args['n_channels'],
-            out_channels=1,
-        ),
-        out2intrans=utils.compose_target2input_transforms()
-    )
+    # define model
+    model = arch.model_factory(args)
 
     # get resume file
     start_epoch = 0

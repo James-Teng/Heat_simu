@@ -100,25 +100,7 @@ if __name__ == '__main__':
     start_time = time.time()
 
     # SRResNet
-    model = arch.NaiveRNNFramework(
-        extractor=arch.SimpleExtractor(
-            in_channels=config['in_channels'],
-            out_channels=config['n_channels'],
-            kernel_size=config['large_kernel_size'],
-        ),
-        backbone=arch.SimpleBackbone(
-            n_blocks=config['blocks'],
-            n_channels=config['n_channels'],
-            kernel_size=config['small_kernel_size'],
-            is_bn=config['bn'],
-        ),
-        regressor=arch.SimpleRegressor(
-            kernel_size=config['large_kernel_size'],
-            in_channels=config['n_channels'],
-            out_channels=1,
-        ),
-        out2intrans=utils.compose_target2input_transforms()
-    )
+    model = arch.model_factory(config)
 
     # resume
     checkpoint_path = os.path.join(task_path, 'checkpoint/checkpoint.pth')
