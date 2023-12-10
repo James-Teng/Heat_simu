@@ -32,7 +32,13 @@ tensorboard 2.10.0
 
 torchinfo
 
-## 3. training command
+## 3. data preparation
+
+`cd ./source`
+
+`bash ./preprocess/batch_process_files.sh`
+
+## 4. training command
 
 pwd: ./source
 
@@ -44,16 +50,8 @@ access to tensorboard
 
 `localhost:6006`
 
-## 4. evaluation command
+## 5. evaluation command
 
-pwd: ./source
-
-
-
-`python ./train/eval.py`
-
-set the checkpoint path in the `eval.py` source code
-
-
+`cd ./source`
 
 `python ./train/k_step_eval.py -k 10 -c $CHECKPOINT_WEIGHT_PATH`
