@@ -157,6 +157,14 @@ class DatasetFromFolder(Dataset):
         """
         return self.length
 
+    # todo calculate_statistic
+    def calculate_statistic(self):
+        """
+        calculate the mean and std of original distributions
+        :return: mean and std
+        """
+        raise NotImplementedError
+
 
 # todo 换成类，继承自 datasetfromfolder，添加一些统计功能
 def SimuHeatDataset(
