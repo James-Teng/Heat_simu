@@ -113,7 +113,7 @@ if __name__ == '__main__':
         ),
         regressor=arch.SimpleRegressor(
             kernel_size=config['large_kernel_size'],
-            in_n_=config['channels'],
+            in_channels=config['n_channels'],
             out_channels=1,
         ),
         out2intrans=utils.compose_target2input_transforms()
