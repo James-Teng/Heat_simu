@@ -110,6 +110,7 @@ if __name__ == '__main__':
             n_blocks=config['blocks'],
             n_channels=config['n_channels'],
             kernel_size=config['small_kernel_size'],
+            is_bn=config['bn'],
         ),
         regressor=arch.SimpleRegressor(
             kernel_size=config['large_kernel_size'],
