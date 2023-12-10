@@ -195,7 +195,7 @@ if __name__ == '__main__':
                 # range batch channel h w
                 final_target.cpu().numpy(),
                 supervised[0, 0, :, :].cpu().numpy(),
-                os.path.join(record_path, f'{cnt}_gt.png'),
+                os.path.join(record_path, f'{cnt+k}_gt.png'),
             )
             utils.plt_save_image(
                 final_predict.cpu().numpy(),
