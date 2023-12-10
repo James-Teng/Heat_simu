@@ -263,7 +263,6 @@ class SimpleArchR(nn.Module):
         return output
 
 
-# framework
 class NaiveRNNFramework(nn.Module):
     """
     see framework.pptx in docs
@@ -274,7 +273,6 @@ class NaiveRNNFramework(nn.Module):
             regressor: nn.Module,
             backbone: nn.Module,
             out2intrans,
-            **kwargs
     ):
         """
         initialization of NaiveRNNFramework
@@ -282,7 +280,6 @@ class NaiveRNNFramework(nn.Module):
         :param regressor: distribution regressor
         :param backbone: backbone model
         :param out2intrans: transforms from output to input
-        :param kwargs: passed to inner modules
         """
         super().__init__()
         self.extractor = extractor
@@ -370,6 +367,88 @@ class NaiveRNNFramework(nn.Module):
         self.is_interval_output = False
 
 
+class IterativeFramework(nn.Module):
+    """
+    see framework.pptx in docs
+    """
+    def __init__(
+            self,
+            extractor: nn.Module,
+            regressor: nn.Module,
+            backbone: nn.Module,
+            out2intrans,
+    ):
+        """
+        initialization of NaiveRNNFramework
+        :param extractor: feature extractor
+        :param regressor: distribution regressor
+        :param backbone: backbone model
+        :param out2intrans: transforms from output to input
+        """
+        super().__init__()
+        self.extractor = extractor
+        self.regressor = regressor
+        self.backbone = backbone
+        self.out2intrans = out2intrans
+
+        self.is_interval_output = True
+
+    def forward(self, x, region_casing, region_supervised, region_data, region_outer):
+        """
+        forward
+        input x: (batch_size, time_step, channel, height, width)
+        :param region_outer:
+        :param region_data:
+        :param region_supervised:
+        :param region_casing:
+        :param x: input is a sequence of heat distribution
+        :return: sequence of heat distribution or final heat distribution
+        """
+
+        # if no batch dim, add one
+        if len(x.shape) != 5:
+            x.unsqueeze_(dim=0)
+
+        output = []
+        distribution = x[:, 0, :, :, :]
+        # time_steps = x.shape[1]
+        for i in range(x.shape[1]):
+
+            # set outer distribution and cat channels
+            distribution = distribution * region_supervised + x[:, i, :, :, :] * region_outer
+            input_x = torch.cat([distribution, region_casing], dim=1)
+
+            # extract features
+            distribution = self.regressor(self.backbone(self.extractor(input_x))) * region_supervised
+
+            # interval and final output
+            if self.is_interval_output or i == x.shape[1] - 1:
+                output.append(distribution)
+
+            # out to in
+            if i < x.shape[1] - 1:
+                distribution = self.out2intrans(distribution)
+
+        if self.is_interval_output:
+            return torch.stack(output, dim=1)
+        else:
+            return output[-1]
+
+    def enable_interval_output(self):
+        """
+        enable interval output
+        :return:
+        """
+        self.is_interval_output = True
+
+    def disable_interval_output(self):
+        """
+        disable interval output
+        :return:
+        """
+        self.is_interval_output = False
+
+
 def model_factory(config):
     """
     model factory
@@ -402,6 +481,30 @@ def model_factory(config):
         assert all([neccessary_config[key] is not None for key in needed_keys]), \
             f'missing keys for {neccessary_config["model_type"]}'
         return NaiveRNNFramework(
+            extractor=SimpleExtractor(
+                in_channels=neccessary_config['in_channels'],
+                out_channels=neccessary_config['n_channels'],
+                kernel_size=neccessary_config['large_kernel_size'],
+            ),
+            backbone=SimpleBackbone(
+                n_blocks=neccessary_config['blocks'],
+                n_channels=neccessary_config['n_channels'],
+                kernel_size=neccessary_config['small_kernel_size'],
+                is_bn=neccessary_config['bn'],
+            ),
+            regressor=SimpleRegressor(
+                kernel_size=neccessary_config['large_kernel_size'],
+                in_channels=neccessary_config['n_channels'],
+                out_channels=1,
+            ),
+            out2intrans=utils.compose_target2input_transforms()
+        )
+
+    elif neccessary_config['model_type'] == 'IterativeFramework':
+        needed_keys = ['large_kernel_size', 'small_kernel_size', 'n_channels', 'blocks', 'in_channels', 'bn']
+        assert all([neccessary_config[key] is not None for key in needed_keys]), \
+            f'missing keys for {neccessary_config["model_type"]}'
+        return IterativeFramework(
             extractor=SimpleExtractor(
                 in_channels=neccessary_config['in_channels'],
                 out_channels=neccessary_config['n_channels'],

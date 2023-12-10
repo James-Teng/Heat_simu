@@ -4,14 +4,13 @@
 # @Author  : James.T
 # @File    : train.py
 
-import pp  # change cwd
-
 import sys
 import os
 import argparse
 import time
 import json
 from tqdm import tqdm
+import logging
 
 import torch.backends.cudnn as cudnn
 import torch
@@ -22,10 +21,9 @@ from tensorboard import program
 import utils
 import arch
 import datasets
-
 import training_manage
+import pp
 
-import logging
 
 # bug: 出过一次多线程的问题 DataLoader worker (pid(s) 20940) exited unexpectedly
 
@@ -90,7 +88,7 @@ if __name__ == '__main__':
     )
 
     # model structure
-    parser.add_argument("--model_type", "-a", type=str, default='NaiveRNNFramework', help="model type")
+    parser.add_argument("--model_type", "-m", type=str, default='IterativeFramework', help="model type")
     parser.add_argument("--large_kernel_size", "-lk", type=int, default=9, help="large conv kernel size")
     parser.add_argument("--small_kernel_size", "-sk", type=int, default=3, help="small conv kernel size")
     parser.add_argument("--in_channels", "-ic", type=int, default=2, help="input channels")  # 没有使用
