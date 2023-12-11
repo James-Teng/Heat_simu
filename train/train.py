@@ -47,8 +47,8 @@ if __name__ == '__main__':
     parser.add_argument(  # todo 修改数据集关于时间间隔的加载
         "--time_intervals", "-ti", nargs='+', type=str,  # choices=['1000.0', '10.0', '0.1'],
         default=[
-            # '1000.0',
-            '10.0'
+            '1000.0',
+            # '10.0'
             # '0.1',
         ],
         help="time intervals"
