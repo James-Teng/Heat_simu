@@ -102,7 +102,7 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", "-bs", type=int, default=24, help="batch size")
     parser.add_argument("--lr_initial", "-lr", type=float, default=1e-4, help="learning rate")
     parser.add_argument("--lr_decay_gamma", "-lr_dg", type=float, default=1, help="learning rate decay gamma")
-    parser.add_argument("--lr_milestones", "-ms", nargs='+', type=int, default=[], help="lr milestones eg: 1 2 3")
+    parser.add_argument("--lr_milestones", "-ms", nargs='+', type=int, default=[], help="lr milestones eg: 1 2 3")  # todo scheduler
 
     parser.add_argument("--n_gpu", "-gpu", type=int, default=1, help="number of gpu")
     parser.add_argument("--worker", "-wk", type=int, default=10, help="dataloader worker")
@@ -112,8 +112,6 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
 
     logging.basicConfig(level=logging.DEBUG if args['debug'] else logging.WARNING)
-
-    # todo 增加命令行参数检测
 
     # # resume
     resume = args['resume']

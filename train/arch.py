@@ -80,7 +80,6 @@ class ConvolutionalBlock(nn.Module):
         return y
 
 
-# todo hourglass 结构
 class ResidualBlock(nn.Module):
     """
     不需要 down sample
@@ -175,6 +174,8 @@ class SimpleBackbone(nn.Module):
         y = self.residual_blocks(x)
         y = self.conv_block(y)
         return y + x
+
+# todo unet
 
 
 # todo 单独使用一个卷积来得到最后的内壳温度分布
@@ -324,7 +325,7 @@ class NaiveRNNFramework(nn.Module):
             if i == 0:
                 features = self.extractor(input_x)
             else:
-                features = self.extractor(input_x) + features  # todo 思考直接相加融合特征的合理性
+                features = self.extractor(input_x) + features  # 这样似乎不太合理
 
             # backbone
             features = self.backbone(features)
@@ -455,7 +456,7 @@ def model_factory(config):
     :param config: config dict
     :return: model
     """
-    # todo 是否有多余的参数
+
     keys = [
         'model_type', 'in_channels', 'n_channels',
         'large_kernel_size', 'small_kernel_size',
@@ -527,8 +528,7 @@ def model_factory(config):
     else:
         raise ValueError(f'unsupported model type: \'{neccessary_config["model_type"]}\'')
 
-# todo 模型配置器，配置表，参考human pose estimation
-# todo 模型初始化表，在其中可以加载 weight
+# todo 模型加载权重，其中可以统计加载率
 
 
 if __name__ == '__main__':

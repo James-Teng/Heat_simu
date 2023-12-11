@@ -1,4 +1,3 @@
-# todo 保存参数来源，在什么数据集上测试的
 # todo 记录 psnr 最大最小
 
 # !/usr/bin/env python
@@ -30,7 +29,6 @@ import datasets
 import eval_metrics
 import training_manage
 
-# todo 适配 train config
 if __name__ == '__main__':
 
     eval_save_path = pp.abs_path('eval_record')
@@ -109,7 +107,7 @@ if __name__ == '__main__':
         checkpoint = torch.load(checkpoint_path)
 
         # load model weights
-        model.load_state_dict(checkpoint['model'])  # todo 统计加载率
+        model.load_state_dict(checkpoint['model'])
     else:
         raise FileNotFoundError(f'No checkpoint found at \'{checkpoint_path}\'')
 
