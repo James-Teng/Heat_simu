@@ -13,6 +13,8 @@ def get_stat(train_dataset, channel):
 
     mean = np.zeros(channel)
     square = np.zeros(channel)
+    max_d = np.array([-np.inf for i in range(channel)])
+    min_d = np.array([np.inf for i in range(channel)])
     for i in range(len(train_dataset)):
         dis, _, _, _, _, _ = train_dataset[i]
         assert isinstance(dis, list), 'variable \'dis\' should be a list'
@@ -21,20 +23,14 @@ def get_stat(train_dataset, channel):
             data_except_0 = np.delete(dis[0][d, :], np.where(dis[0][d, :] == 0))
             mean[d] += data_except_0.mean()
             square[d] += np.square(data_except_0).mean()
+            max_d[d] = np.max([data_except_0.max(), max_d[d]])
+            min_d[d] = np.min([data_except_0.min(), min_d[d]])
+
     mean /= len(train_dataset)
     square /= len(train_dataset)
     std = np.sqrt(square - np.square(mean))
 
-    # squared_mean = np.zeros(channel)
-    # for i in range(len(train_dataset)):
-    #     dis, _, _, _, _, _ = train_dataset[i]
-    #     dis[0] = dis[0].reshape((channel, -1))
-    #     for d in range(channel):
-    #         data_except_0 = np.delete(dis[0][d, :], np.where(dis[0][d, :] == 0))
-    #         squared_mean[d] += np.square(data_except_0 - mean[d]).mean()
-    # std = np.sqrt(squared_mean/len(train_dataset))
-
-    return list(mean), list(std)
+    return list(mean), list(std), list(min_d), list(max_d)
 
 
 if __name__ == '__main__':
@@ -65,6 +61,6 @@ if __name__ == '__main__':
     }
 
     for time_interval, dataset in datasets_dict.items():
-        mean, std = get_stat(dataset, 1)
-        print(f'{time_interval}: mean={mean}, std={std}')
+        mean, std, min_d, max_d = get_stat(dataset, 1)
+        print(f'{time_interval}: mean={mean}, std={std}, min={min_d}, max={max_d}')
 
