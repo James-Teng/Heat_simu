@@ -116,8 +116,8 @@ if __name__ == '__main__':
     model.eval()
 
     # dataset
-    datasets_dict = datasets.SimuHeatDataset(
-        time_intervals=config['time_intervals'],
+    heat_dataset = datasets.SimuHeatDataset(
+        time_interval=config['time_interval'],
         roots=data_roots,
         gaps=gaps,
         supervised_range=k,
@@ -125,7 +125,7 @@ if __name__ == '__main__':
         crop_size=None
     )
     eval_dataloader = torch.utils.data.DataLoader(
-        datasets_dict[config['time_intervals'][0]],
+        heat_dataset,
         batch_size=1,
         shuffle=False,
         pin_memory=True,

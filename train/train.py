@@ -45,13 +45,10 @@ if __name__ == '__main__':
     parser.add_argument("--k_steps_supervised", "-k", type=int, default=1, help="supervised steps")
     parser.add_argument("--flip", type=bool, default=True, help="flip")
     parser.add_argument(  # todo 修改数据集关于时间间隔的加载
-        "--time_intervals", "-ti", nargs='+', type=str,  # choices=['1000.0', '10.0', '0.1'],
-        default=[
-            '1000.0',
-            # '10.0'
-            # '0.1',
-        ],
-        help="time intervals"
+        "--time_interval", "-ti", type=str,
+        default='1000.0',
+        choices=['1000.0', '10.0', '0.1'],
+        help="time interval"
     )
     parser.add_argument(
         "--data_roots", "-dr", nargs='+', type=str,
@@ -198,8 +195,8 @@ if __name__ == '__main__':
         model = nn.DataParallel(model, device_ids=list(range(args['n_gpu'])))  # 之后的项目应该用 nn.DistributedDataParallel
 
     # datasets
-    datasets_dict = datasets.SimuHeatDataset(
-        time_intervals=args['time_intervals'],
+    heat_dataset = datasets.SimuHeatDataset(
+        time_interval=args['time_interval'],
         roots=args['data_roots'],
         gaps=args['gaps'],
         supervised_range=args['k_steps_supervised'],
@@ -208,7 +205,7 @@ if __name__ == '__main__':
     )
 
     train_dataloader = torch.utils.data.DataLoader(
-        datasets_dict[args['time_intervals'][0]],
+        heat_dataset,
         batch_size=args['batch_size'],
         shuffle=True,
         num_workers=args['worker'],

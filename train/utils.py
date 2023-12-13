@@ -21,35 +21,6 @@ from collections.abc import Callable
 #   statistics
 # ----------------
 
-# todo 换用只需要一次遍历的算法
-def get_stat(train_dataset, channel):
-    """
-    Compute mean and std for training data
-    :param train_dataset:
-    :param channel:
-    :return: (mean, std)
-    """
-    # 统计均值
-    mean = np.zeros(channel)
-    for i in range(len(train_dataset)):
-        dis, _ = train_dataset[i]
-        dis[0] = dis[0].reshape((channel, -1))
-        for d in range(channel):
-            data_except_0 = np.delete(dis[0][d, :], np.where(dis[0][d, :] == 0))
-            mean[d] += data_except_0.mean()
-    mean /= len(train_dataset)
-
-    # 统计标准差
-    squared_mean = np.zeros(channel)
-    for i in range(len(train_dataset)):
-        dis, _ = train_dataset[i]
-        dis[0] = dis[0].reshape((channel, -1))
-        for d in range(channel):
-            data_except_0 = np.delete(dis[0][d, :], np.where(dis[0][d, :] == 0))
-            squared_mean[d] += np.square(data_except_0 - mean[d]).mean()
-    std = np.sqrt(squared_mean/len(train_dataset))
-
-    return list(mean), list(std)
 
 # ----------------
 #   visualization
@@ -116,7 +87,7 @@ def name_folder(
     naming = time.strftime(f'%Y%m%d_%H%M%S_%A', time.localtime())
     if suffix:
         naming += '_' + suffix
-    return naming
+    return str(naming)
 
 
 # --------------------
@@ -173,19 +144,27 @@ def load_loss_file(file_path):
 #   image transforms
 # --------------------
 
-def compose_transforms(d_min=0, d_max=400, crop: Optional[int] = None, flip: bool = False):
-    return compose_input_transforms(crop, flip), \
+def compose_transforms(
+        d_min=0,
+        d_max=400,
+        mean=(141.01774070236965,),
+        std=(59.57186979412488,),
+        crop: Optional[int] = None,
+        flip: bool = False
+):
+    return compose_input_transforms(mean, std, crop, flip), \
            compose_mask_transforms(crop, flip), \
            compose_target_transforms(d_min, d_max, crop=crop, flip=flip)
 
 
 # 输入变换
 # todo gaps 层的数据分布是否需要统计
-def compose_input_transforms(crop: Optional[int] = None, flip: bool = False):
+def compose_input_transforms(mean, std, crop: Optional[int] = None, flip: bool = False):
     trans = [
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=(141.01774070236965,), std=(59.57186979412488,)
+            mean=mean, std=std
+            # mean=(141.01774070236965,), std=(59.57186979412488,)
         ),
         DtypeTransform(),
     ]

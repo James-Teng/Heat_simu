@@ -107,8 +107,8 @@ class DatasetFromFolder(Dataset):
             distribs.append(np.load(self.image_list[midx+i]))
             logging.debug(f'{self.image_list[midx+i]} loaded')
         logging.debug(f'load {self.supervised_range + 1} distributions')
-        in_distribs = distribs[:-1]
-        out_distribs = distribs[1:]
+        in_distribs = distribs[:-1] if self.supervised_range > 0 else distribs
+        out_distribs = distribs[1:] if self.supervised_range > 0 else None
         del distribs
 
         # the sequence of random process must be the same
@@ -170,11 +170,12 @@ class DatasetFromFolder(Dataset):
 def SimuHeatDataset(
         roots: list[str],  # 需要包含的训练数据
         gaps: list[float],  # 上述数据其对应的 热阻
-        time_intervals: list[str],  # 期望的时间间隔，返回相同数量的数据集
+        time_interval: str,  # 期望的时间间隔，返回相同数量的数据集
         supervised_range: int = 1,
         flip: bool = True,
         crop_size: Optional[int] = None,
-) -> dict:
+        is_transform: bool = True,
+) -> DatasetFromFolder:
     """
     build datasets, and compose transforms
 
@@ -191,27 +192,38 @@ def SimuHeatDataset(
 
     assert len(roots) == len(gaps), "the length of roots and gaps must be the same"
 
+    data_statistic_dict = {
+        '1000.0': {'mean': (141.01774070236965,), 'std': (59.57186979412488,), 'min': 0.0, 'max': 400.0},
+        '10.0': {'mean': (141.01774070236965,), 'std': (59.57186979412488,), 'min': 0.0, 'max': 400.0},
+    }
+
     # transforms
-    input_trans, mask_trans, target_trans = utils.compose_transforms(crop=crop_size, flip=flip)
-
-    # make datasets
-    simu_heat_datasets = {}
-    for interv in time_intervals:
-        image_list_paths = [
-            os.path.join(r, f'data_list_interval_{interv}.json')
-            for r in roots
-            if os.path.isfile(os.path.join(r, f'data_list_interval_{interv}.json'))
-        ]
-        simu_heat_datasets[interv] = DatasetFromFolder(
-            image_list_paths=image_list_paths,
-            gaps=gaps,
-            supervised_range=supervised_range,
-            transform_input=input_trans,
-            transform_target=target_trans,
-            transform_region=mask_trans,
+    if is_transform:
+        input_trans, mask_trans, target_trans = utils.compose_transforms(
+            mean=data_statistic_dict[time_interval]['mean'],
+            std=data_statistic_dict[time_interval]['std'],
+            d_min=data_statistic_dict[time_interval]['min'],
+            d_max=data_statistic_dict[time_interval]['max'],
+            crop=crop_size,
+            flip=flip,
         )
+    else:
+        input_trans, mask_trans, target_trans = None, None, None
 
-    return simu_heat_datasets
+    # make dataset
+    image_list_paths = [
+        os.path.join(r, f'data_list_interval_{time_interval}.json')
+        for r in roots
+        if os.path.isfile(os.path.join(r, f'data_list_interval_{time_interval}.json'))
+    ]
+    return DatasetFromFolder(
+        image_list_paths=image_list_paths,
+        gaps=gaps,
+        supervised_range=supervised_range,
+        transform_input=input_trans,
+        transform_target=target_trans,
+        transform_region=mask_trans,
+    )
 
 
 def cat_input(distribution, region):

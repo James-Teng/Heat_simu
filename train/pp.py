@@ -17,4 +17,4 @@ project_root = _cur_dir
 
 
 def abs_path(path_in_project):
-    return os.path.normpath(os.path.join(project_root, path_in_project))
+    return str(os.path.normpath(os.path.join(project_root, path_in_project)))
