@@ -137,7 +137,7 @@ if __name__ == '__main__':
         f.write(f'-- {k} steps eval --\n')
         f.write(f'model path: {checkpoint_path}\n')
         f.write(f'datasets: {data_roots}\n')
-        f.write(f"time interval: {config['time_intervals']}\n")
+        f.write(f"time interval: {config['time_interval']}\n")
         f.write(f'eval time: {comment}\n')
 
     # --------------------------------------------------------------------
