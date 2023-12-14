@@ -181,11 +181,11 @@ def SimuHeatDataset(
 
     :param roots: dataset roots
     :param gaps:
-    :param time_intervals:
+    :param time_interval:
     :param supervised_range:
     :param flip:
     :param crop_size:
-
+    :param is_transform:
     :returns:
         the configured dataset
     """

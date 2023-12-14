@@ -140,7 +140,7 @@ if __name__ == '__main__':
 
     # save config
     if not resume:
-        training_manage.write_config(args, config_path)
+        training_manage.write_config(args, config_path)  # todo 记录文件添加代码版本号
 
     # --------------------------------------------------------------------
     #  Initialization
